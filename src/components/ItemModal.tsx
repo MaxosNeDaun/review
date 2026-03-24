@@ -54,7 +54,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
   const loadReviews = async () => {
     if (!item) return;
     setIsLoading(true);
-    // item.id je v DB typu UUID (string)
+    // Převod na string zajistí, že TypeScript nebude hlásit chybu u UUID
     const data = await getReviewsByItemId(String(item.id));
     setReviews(data);
     setIsLoading(false);
@@ -83,7 +83,6 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
 
     setIsSubmitting(true);
     
-    // Voláme addReview s daty pro SQL sloupce: author_name a comment
     const review = await addReview(
       String(item.id),
       userName.trim() || 'Anonym',
@@ -112,7 +111,6 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
     setIsSubmitting(false);
   };
 
-  // OPRAVA: reviewId musí být string, protože v DB je to UUID
   const handleDelete = async (reviewId: string) => {
     const success = await deleteReview(reviewId);
     if (success) {
@@ -132,7 +130,6 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
         <div
           className="relative h-56 overflow-hidden flex items-center justify-center text-7xl bg-slate-800"
         >
-          {/* Pokud máš v item objektu emoji, použijeme ho, jinak ikonu podle kategorie */}
           {item.emoji || catEmojis[item.cat]}
           <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent" />
           
@@ -232,7 +229,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
                 </p>
               ) : (
                 <div className="space-y-3">
-                  {reviews.map((review) => (
+                  {reviews.map((review: any) => (
                     <div
                       key={String(review.id)}
                       className="rounded-lg border border-slate-800 bg-slate-800/30 p-4"
@@ -241,8 +238,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4 text-slate-500" />
                           <span className="text-sm font-medium text-slate-300">
-                            {/* OPRAVA: SQL sloupec je author_name nebo user_name? 
-                                Pokud jsi nepoužil ten poslední SQL rename, nech tu author_name */}
+                            {/* Používáme jakýkoliv název sloupce, který v DB je */}
                             {review.author_name || review.user_name || 'Anonym'}
                           </span>
                         </div>
@@ -263,7 +259,6 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
                       <StarRating rating={review.rating} size="sm" className="mb-2" />
                       
                       <p className="text-sm text-slate-400">
-                        {/* OPRAVA: SQL sloupec je comment nebo text? */}
                         {review.comment || review.text}
                       </p>
                     </div>
