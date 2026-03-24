@@ -4,11 +4,9 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Item, Review } from '@/types';
 
-// Získání hodnot z environment variables
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-// Vytvoření klienta
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
 // ============================================
@@ -22,14 +20,13 @@ export async function getItems(): Promise<Item[]> {
   const { data: items, error: itemsError } = await supabase
     .from('items')
     .select('*')
-    .order('id', { ascending: true });
+    .order('created_at', { ascending: true });
 
   if (itemsError) {
     console.error('Error fetching items:', itemsError);
     return [];
   }
 
-  // Načteme všechny recenze
   const { data: reviews, error: reviewsError } = await supabase
     .from('reviews')
     .select('item_id, rating');
@@ -39,12 +36,12 @@ export async function getItems(): Promise<Item[]> {
     return items || [];
   }
 
-  // Spočítáme statistiky pro každou položku
   const itemsWithStats = (items || []).map((item) => {
     const itemReviews = (reviews || []).filter((r) => r.item_id === item.id);
-    const avgRating = itemReviews.length > 0
-      ? itemReviews.reduce((sum, r) => sum + r.rating, 0) / itemReviews.length
-      : 0;
+    const avgRating =
+      itemReviews.length > 0
+        ? itemReviews.reduce((sum, r) => sum + r.rating, 0) / itemReviews.length
+        : 0;
 
     return {
       ...item,
@@ -59,7 +56,7 @@ export async function getItems(): Promise<Item[]> {
 /**
  * Načte jednu položku podle ID
  */
-export async function getItemById(id: number): Promise<Item | null> {
+export async function getItemById(id: string): Promise<Item | null> {
   const { data: item, error: itemError } = await supabase
     .from('items')
     .select('*')
@@ -71,7 +68,6 @@ export async function getItemById(id: number): Promise<Item | null> {
     return null;
   }
 
-  // Načteme recenze pro tuto položku
   const { data: reviews, error: reviewsError } = await supabase
     .from('reviews')
     .select('rating')
@@ -82,9 +78,10 @@ export async function getItemById(id: number): Promise<Item | null> {
     return item;
   }
 
-  const avgRating = (reviews || []).length > 0
-    ? (reviews || []).reduce((sum, r) => sum + r.rating, 0) / (reviews || []).length
-    : 0;
+  const avgRating =
+    (reviews || []).length > 0
+      ? (reviews || []).reduce((sum, r) => sum + r.rating, 0) / (reviews || []).length
+      : 0;
 
   return {
     ...item,
@@ -100,7 +97,7 @@ export async function getItemById(id: number): Promise<Item | null> {
 /**
  * Načte všechny recenze pro danou položku
  */
-export async function getReviewsByItemId(itemId: number): Promise<Review[]> {
+export async function getReviewsByItemId(itemId: string): Promise<Review[]> {
   const { data, error } = await supabase
     .from('reviews')
     .select('*')
@@ -119,19 +116,19 @@ export async function getReviewsByItemId(itemId: number): Promise<Review[]> {
  * Přidá novou recenzi
  */
 export async function addReview(
-  itemId: number,
-  userName: string,
+  itemId: string,
+  authorName: string,
   rating: number,
-  text: string
+  comment: string
 ): Promise<Review | null> {
   const { data, error } = await supabase
     .from('reviews')
     .insert([
       {
         item_id: itemId,
-        user_name: userName,
+        author_name: authorName || 'Anonym',
         rating,
-        text,
+        comment,
       },
     ])
     .select()
@@ -148,7 +145,7 @@ export async function addReview(
 /**
  * Smaže recenzi
  */
-export async function deleteReview(reviewId: number): Promise<boolean> {
+export async function deleteReview(reviewId: string): Promise<boolean> {
   const { error } = await supabase
     .from('reviews')
     .delete()
@@ -167,10 +164,10 @@ export async function deleteReview(reviewId: number): Promise<boolean> {
 // ============================================
 
 /**
- * Přihlášení k realtime změnám v recenzích
+ * Přihlášení k realtime změnám v recenzích pro konkrétní položku
  */
 export function subscribeToReviews(
-  itemId: number,
+  itemId: string,
   callback: (review: Review) => void
 ) {
   return supabase
@@ -191,11 +188,11 @@ export function subscribeToReviews(
 }
 
 /**
- * Přihlášení ke všem změnám recenzí (pro aktualizaci Top 5)
+ * Přihlášení ke všem změnám recenzí (pro aktualizaci Top 5 atd.)
  */
 export function subscribeToAllReviews(callback: () => void) {
   return supabase
-    .channel('reviews')
+    .channel('all-reviews')
     .on(
       'postgres_changes',
       {
