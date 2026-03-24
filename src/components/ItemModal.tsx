@@ -45,7 +45,6 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  // Načtení recenzí při otevření modalu
   useEffect(() => {
     if (item && open) {
       loadReviews();
@@ -55,7 +54,8 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
   const loadReviews = async () => {
     if (!item) return;
     setIsLoading(true);
-    const data = await getReviewsByItemId(item.id);
+    // item.id je v DB typu UUID (string)
+    const data = await getReviewsByItemId(String(item.id));
     setReviews(data);
     setIsLoading(false);
   };
@@ -83,8 +83,9 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
 
     setIsSubmitting(true);
     
+    // Voláme addReview s daty pro SQL sloupce: author_name a comment
     const review = await addReview(
-      item.id,
+      String(item.id),
       userName.trim() || 'Anonym',
       newRating,
       newText.trim()
@@ -97,6 +98,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
       });
       setNewRating(0);
       setNewText('');
+      setUserName('');
       await loadReviews();
       onReviewAdded();
     } else {
@@ -110,7 +112,8 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
     setIsSubmitting(false);
   };
 
-  const handleDelete = async (reviewId: number) => {
+  // OPRAVA: reviewId musí být string, protože v DB je to UUID
+  const handleDelete = async (reviewId: string) => {
     const success = await deleteReview(reviewId);
     if (success) {
       toast({
@@ -126,14 +129,11 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-hidden border-slate-800 bg-slate-900 p-0">
-        {/* Header with image */}
         <div
-          className="relative h-56 overflow-hidden"
-          style={{ background: item.color }}
+          className="relative h-56 overflow-hidden flex items-center justify-center text-7xl bg-slate-800"
         >
-          <div className="flex h-full items-center justify-center text-7xl">
-            {item.emoji}
-          </div>
+          {/* Pokud máš v item objektu emoji, použijeme ho, jinak ikonu podle kategorie */}
+          {item.emoji || catEmojis[item.cat]}
           <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent" />
           
           <button
@@ -164,20 +164,18 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
               {item.description}
             </p>
 
-            {/* Rating summary */}
             <div className="mb-6 flex items-center gap-4 rounded-xl bg-slate-800/50 p-4">
               <div className="text-4xl font-bold text-violet-400">
-                {(item.avg_rating || 0).toFixed(1)}
+                {Number(item.avg_rating || 0).toFixed(1)}
               </div>
               <div>
-                <StarRating rating={item.avg_rating || 0} size="lg" />
+                <StarRating rating={Number(item.avg_rating || 0)} size="lg" />
                 <p className="mt-1 text-sm text-slate-500">
                   {item.review_count || 0} recenzí
                 </p>
               </div>
             </div>
 
-            {/* Add review form */}
             <div className="mb-6">
               <h3 className="mb-3 text-lg font-semibold text-slate-200">
                 ✍️ Přidat recenzi
@@ -221,7 +219,6 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
 
             <Separator className="my-6 bg-slate-800" />
 
-            {/* Reviews list */}
             <div>
               <h3 className="mb-4 text-lg font-semibold text-slate-200">
                 💬 Recenze ({reviews.length})
@@ -237,14 +234,16 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
                 <div className="space-y-3">
                   {reviews.map((review) => (
                     <div
-                      key={review.id}
+                      key={String(review.id)}
                       className="rounded-lg border border-slate-800 bg-slate-800/30 p-4"
                     >
                       <div className="mb-2 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4 text-slate-500" />
                           <span className="text-sm font-medium text-slate-300">
-                            {review.user_name}
+                            {/* OPRAVA: SQL sloupec je author_name nebo user_name? 
+                                Pokud jsi nepoužil ten poslední SQL rename, nech tu author_name */}
+                            {review.author_name || review.user_name || 'Anonym'}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -253,7 +252,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
                             {new Date(review.created_at).toLocaleDateString('cs-CZ')}
                           </span>
                           <button
-                            onClick={() => handleDelete(review.id)}
+                            onClick={() => handleDelete(String(review.id))}
                             className="text-slate-500 transition-colors hover:text-red-400"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -263,7 +262,10 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
                       
                       <StarRating rating={review.rating} size="sm" className="mb-2" />
                       
-                      <p className="text-sm text-slate-400">{review.text}</p>
+                      <p className="text-sm text-slate-400">
+                        {/* OPRAVA: SQL sloupec je comment nebo text? */}
+                        {review.comment || review.text}
+                      </p>
                     </div>
                   ))}
                 </div>
