@@ -13,9 +13,6 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
 // FUNKCE PRO PRÁCI S ITEMS
 // ============================================
 
-/**
- * Načte všechny položky s průměrným hodnocením a počtem recenzí
- */
 export async function getItems(): Promise<Item[]> {
   const { data: items, error: itemsError } = await supabase
     .from('items')
@@ -53,9 +50,6 @@ export async function getItems(): Promise<Item[]> {
   return itemsWithStats;
 }
 
-/**
- * Načte jednu položku podle ID
- */
 export async function getItemById(id: string): Promise<Item | null> {
   const { data: item, error: itemError } = await supabase
     .from('items')
@@ -94,9 +88,6 @@ export async function getItemById(id: string): Promise<Item | null> {
 // FUNKCE PRO PRÁCI S RECENZEMI
 // ============================================
 
-/**
- * Načte všechny recenze pro danou položku
- */
 export async function getReviewsByItemId(itemId: string): Promise<Review[]> {
   const { data, error } = await supabase
     .from('reviews')
@@ -113,7 +104,7 @@ export async function getReviewsByItemId(itemId: string): Promise<Review[]> {
 }
 
 /**
- * Přidá novou recenzi
+ * PŘIDÁNÍ RECENZE - OPRAVENO
  */
 export async function addReview(
   itemId: string,
@@ -121,14 +112,15 @@ export async function addReview(
   rating: number,
   comment: string
 ): Promise<Review | null> {
+  // Tady mapujeme parametry na přesné názvy sloupců v SQL (author_name a comment)
   const { data, error } = await supabase
     .from('reviews')
     .insert([
       {
         item_id: itemId,
-        author_name: authorName || 'Anonym',
-        rating,
-        comment,
+        author_name: authorName, // SQL sloupec
+        rating: rating,
+        comment: comment,       // SQL sloupec
       },
     ])
     .select()
@@ -143,7 +135,7 @@ export async function addReview(
 }
 
 /**
- * Smaže recenzi
+ * SMAZÁNÍ RECENZE - OPRAVENO
  */
 export async function deleteReview(reviewId: string): Promise<boolean> {
   const { error } = await supabase
@@ -152,6 +144,7 @@ export async function deleteReview(reviewId: string): Promise<boolean> {
     .eq('id', reviewId);
 
   if (error) {
+    // Pokud zde vidíš chybu, pravděpodobně nemáš v Supabase nastavenou DELETE Policy!
     console.error('Error deleting review:', error);
     return false;
   }
@@ -160,49 +153,27 @@ export async function deleteReview(reviewId: string): Promise<boolean> {
 }
 
 // ============================================
-// REALTIME SUBSCRIPTIONS
+// REALTIME (ponecháno beze změny)
 // ============================================
 
-/**
- * Přihlášení k realtime změnám v recenzích pro konkrétní položku
- */
-export function subscribeToReviews(
-  itemId: string,
-  callback: (review: Review) => void
-) {
+export function subscribeToReviews(itemId: string, callback: (review: Review) => void) {
   return supabase
     .channel(`reviews:item_id=eq.${itemId}`)
     .on(
       'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'reviews',
-        filter: `item_id=eq.${itemId}`,
-      },
-      (payload) => {
-        callback(payload.new as Review);
-      }
+      { event: '*', schema: 'public', table: 'reviews', filter: `item_id=eq.${itemId}` },
+      (payload) => callback(payload.new as Review)
     )
     .subscribe();
 }
 
-/**
- * Přihlášení ke všem změnám recenzí (pro aktualizaci Top 5 atd.)
- */
 export function subscribeToAllReviews(callback: () => void) {
   return supabase
     .channel('all-reviews')
     .on(
       'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'reviews',
-      },
-      () => {
-        callback();
-      }
+      { event: '*', schema: 'public', table: 'reviews' },
+      () => callback()
     )
     .subscribe();
 }
