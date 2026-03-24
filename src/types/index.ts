@@ -1,11 +1,12 @@
 // ============================================
-// TYPY PRO REVIEWHUB
+// TYPY PRO REVIEWHUB - OPRAVENO PRO SUPABASE
 // ============================================
 
 export type Category = 'film' | 'game' | 'book' | 'all';
 
 export interface Item {
-  id: number;
+  // Změněno na string | number, aby to vzalo UUID ze Supabase i tvoje testovací ID
+  id: string | number; 
   cat: 'film' | 'game' | 'book';
   title: string;
   emoji: string;
@@ -20,11 +21,14 @@ export interface Item {
 }
 
 export interface Review {
-  id: number;
-  item_id: number;
-  user_name: string;
+  id: string | number; // UUID je string, ale tvoje staré typy chtěly number
+  item_id: string | number;
+  // Přidáme obě varianty názvů, aby TypeScript nehlásil chybu v ItemModal.tsx
+  user_name: string; 
+  author_name?: string; // Volitelné pro SQL kompatibilitu
   rating: number;
   text: string;
+  comment?: string;     // Volitelné pro SQL kompatibilitu
   created_at: string;
 }
 
