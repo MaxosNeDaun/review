@@ -41,9 +41,9 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
   const [newText, setNewText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
-  // Auth state - už jen user, žádný admin
   const [currentUser, setCurrentUser] = useState<any>(null);
+
+  const MAX_CHARS = 200;
 
   useEffect(() => {
     if (item && open) {
@@ -78,9 +78,12 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
       return;
     }
 
+    if (newText.length > MAX_CHARS) {
+      toast.error(`Recenze může mít maximálně ${MAX_CHARS} znaků.`);
+      return;
+    }
+
     setIsSubmitting(true);
-    
-    // Použijeme email jako jméno autora (vše před @)
     const authorName = currentUser.email?.split('@')[0] || 'Uživatel';
 
     const review = await addReview(
@@ -108,7 +111,6 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-hidden border-slate-800 bg-slate-950 p-0 text-white">
-        {/* Header Image / Emoji */}
         <div className="relative h-56 overflow-hidden flex items-center justify-center text-7xl bg-slate-900">
           {item.emoji || catEmojis[item.cat]}
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
@@ -143,13 +145,13 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
               </div>
               <div>
                 <StarRating rating={Number(item.avg_rating || 0)} size="lg" />
-                <p className="mt-1 text-sm text-slate-500 font-medium">
-                  CELKEM {item.review_count || 0} RECENZÍ
+                <p className="mt-1 text-sm text-slate-500 font-medium uppercase tracking-wider">
+                  Celkem {item.review_count || 0} recenzí
                 </p>
               </div>
             </div>
 
-            {/* SEKCE PŘIDÁNÍ RECENZE - POUZE PRO PŘIHLÁŠENÉ */}
+            {/* SEKCE PŘIDÁNÍ RECENZE */}
             <div className="mb-8 p-6 rounded-2xl bg-slate-900/50 border border-slate-800">
               <h3 className="mb-4 text-lg font-bold flex items-center gap-2">
                 <Send className="h-5 w-5 text-violet-500" /> Přidat hodnocení
@@ -167,28 +169,34 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
                     />
                   </div>
 
-                  <Textarea
-                    placeholder="Napiš, co si o tom myslíš..."
-                    value={newText}
-                    onChange={(e) => setNewText(e.target.value)}
-                    className="min-h-[100px] border-slate-800 bg-slate-950 text-slate-200 focus:ring-violet-500"
-                  />
+                  <div className="relative">
+                    <Textarea
+                      placeholder="Napiš krátkou recenzi..."
+                      value={newText}
+                      onChange={(e) => setNewText(e.target.value)}
+                      maxLength={MAX_CHARS}
+                      className="min-h-[100px] border-slate-800 bg-slate-950 text-slate-200 focus:ring-violet-500 pr-2 pb-8"
+                    />
+                    <div className={`absolute bottom-2 right-3 text-[10px] font-bold tracking-widest uppercase ${newText.length >= MAX_CHARS ? 'text-red-500' : 'text-slate-500'}`}>
+                      {newText.length} / {MAX_CHARS}
+                    </div>
+                  </div>
 
                   <Button
                     onClick={handleSubmit}
                     disabled={isSubmitting}
-                    className="w-full bg-violet-600 hover:bg-violet-500 text-white font-bold py-6 rounded-xl transition-all"
+                    className="w-full bg-violet-600 hover:bg-violet-500 text-white font-bold py-6 rounded-xl transition-all shadow-lg shadow-violet-500/10"
                   >
-                    {isSubmitting ? 'Odesílám...' : 'Publikovat recenzi'}
+                    {isSubmitting ? 'Publikuji...' : 'Publikovat recenzi'}
                   </Button>
                 </div>
               ) : (
                 <div className="py-4 text-center">
-                  <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 mb-3">
-                    <Lock className="h-6 w-6 text-slate-500" />
+                  <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 mb-3 text-slate-500">
+                    <Lock className="h-6 w-6" />
                   </div>
                   <p className="text-slate-400 text-sm mb-4">Pro přidání recenze se musíš přihlásit.</p>
-                  <Button variant="outline" className="border-slate-700 hover:bg-slate-800" onClick={() => onOpenChange(false)}>
+                  <Button variant="outline" className="border-slate-700 hover:bg-slate-800 rounded-full px-8" onClick={() => onOpenChange(false)}>
                     Zavřít a přihlásit se
                   </Button>
                 </div>
@@ -199,7 +207,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
 
             {/* SEKCE RECENZÍ */}
             <div>
-              <h3 className="mb-6 text-xl font-bold">
+              <h3 className="mb-6 text-xl font-bold flex items-center gap-2">
                 💬 Diskuze ({reviews.length})
               </h3>
 
@@ -216,12 +224,12 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
                   {reviews.map((review) => (
                     <div
                       key={review.id}
-                      className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5"
+                      className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5 transition-colors hover:bg-slate-900/60"
                     >
                       <div className="mb-3 flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-full bg-violet-600/20 flex items-center justify-center text-violet-500 font-bold text-xs">
-                            {review.author_name?.[0].toUpperCase() || 'U'}
+                          <div className="h-8 w-8 rounded-full bg-violet-600/20 flex items-center justify-center text-violet-500 font-bold text-xs uppercase">
+                            {review.author_name?.[0] || 'U'}
                           </div>
                           <div>
                             <span className="block text-sm font-bold text-slate-200">
