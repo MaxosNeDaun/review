@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
-import { Item, Review } from '../types'; // Uprav cestu podle tvé složky
+// Oprava TS1484: Přidáno slovo 'type' pro kompatibilitu s verbatimModuleSyntax
+import { type Item, type Review } from '../types'; 
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
@@ -29,7 +30,6 @@ export async function getItems(): Promise<Item[]> {
 
     return {
       ...item,
-      // Pokud by emoji v DB chybělo, dáme tam aspoň hvězdičku
       emoji: item.emoji || '⭐', 
       avg_rating: Number(avg.toFixed(1)),
       review_count: itemReviews.length,
@@ -37,7 +37,37 @@ export async function getItems(): Promise<Item[]> {
   });
 }
 
+export async function deleteItem(itemId: string): Promise<boolean> {
+  const { error } = await supabase.from('items').delete().eq('id', itemId);
+  return !error;
+}
+
 // --- RECENZE FUNKCE ---
+
+// Oprava TS2305: Přidán chybějící export addReview pro ItemModal.tsx
+export async function addReview(
+  itemId: string, 
+  author: string, 
+  rating: number, 
+  comment: string
+): Promise<Review | null> {
+  const { data, error } = await supabase
+    .from('reviews')
+    .insert([{ 
+      item_id: itemId, 
+      author_name: author, 
+      rating: rating, 
+      comment: comment 
+    }])
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Chyba při přidávání recenze:', error.message);
+    return null;
+  }
+  return data as Review;
+}
 
 export async function getReviewsByItemId(itemId: string): Promise<Review[]> {
   const { data, error } = await supabase
@@ -72,9 +102,4 @@ export async function getUserRole(userId: string): Promise<'admin' | 'user'> {
     .eq('id', userId)
     .single();
   return data?.role || 'user';
-}
-
-export async function deleteItem(itemId: string): Promise<boolean> {
-  const { error } = await supabase.from('items').delete().eq('id', itemId);
-  return !error;
 }
