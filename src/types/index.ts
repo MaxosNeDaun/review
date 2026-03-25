@@ -1,20 +1,15 @@
-// ============================================
-// TYPY PRO REVIEWHUB - VERZE S EMOJI
-// ============================================
-
 export type Category = 'film' | 'game' | 'book' | 'all';
 
 export interface Item {
-  id: string; // UUID ze Supabase
+  id: string;
   cat: 'film' | 'game' | 'book';
   title: string;
-  emoji: string; // VRÁCENO - nyní povinné pro komponenty
+  emoji: string; 
   genre: string;
   color: string;
   description: string;
   image_url?: string;
   created_at?: string;
-  // Vypočítané hodnoty z reviews
   avg_rating?: number;
   review_count?: number;
 }
