@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Send, Trash2, User, Calendar, Lock } from 'lucide-react';
+import { X, Send, Trash2, Calendar, Lock } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
