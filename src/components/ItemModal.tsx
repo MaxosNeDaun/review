@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Send, Trash2, Calendar, Lock } from 'lucide-react';
+import { X, Send, Calendar, Lock } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -12,8 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { StarRating } from './StarRating';
-import { getReviewsByItemId, addReview, deleteReview, supabase, getUserRole } from '@/lib/supabase';
-import { toast } from 'sonner'; // Používám sonner pro konzistenci s App.tsx
+import { getReviewsByItemId, addReview, supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 import type { Item, Review } from '@/types';
 
 interface ItemModalProps {
@@ -42,9 +42,8 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
-  // Auth state
+  // Auth state - už jen user, žádný admin
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (item && open) {
@@ -55,15 +54,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user ?? null;
-    setCurrentUser(user);
-    
-    if (user) {
-      const role = await getUserRole(user.id);
-      setIsAdmin(role === 'admin');
-    } else {
-      setIsAdmin(false);
-    }
+    setCurrentUser(session?.user ?? null);
   };
 
   const loadReviews = async () => {
@@ -89,7 +80,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
 
     setIsSubmitting(true);
     
-    // Použijeme email uživatele jako jméno autora
+    // Použijeme email jako jméno autora (vše před @)
     const authorName = currentUser.email?.split('@')[0] || 'Uživatel';
 
     const review = await addReview(
@@ -112,22 +103,12 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
     setIsSubmitting(false);
   };
 
-  const handleDelete = async (reviewId: string) => {
-    if (!isAdmin) return;
-    
-    const success = await deleteReview(reviewId);
-    if (success) {
-      toast.success('Recenze smazána');
-      await loadReviews();
-      onReviewAdded();
-    }
-  };
-
   if (!item) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-hidden border-slate-800 bg-slate-950 p-0 text-white">
+        {/* Header Image / Emoji */}
         <div className="relative h-56 overflow-hidden flex items-center justify-center text-7xl bg-slate-900">
           {item.emoji || catEmojis[item.cat]}
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
@@ -156,10 +137,6 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
               </div>
             </DialogHeader>
 
-            <p className="mb-6 text-slate-400 leading-relaxed text-lg">
-              {item.description}
-            </p>
-
             <div className="mb-8 flex items-center gap-6 rounded-2xl bg-slate-900 border border-slate-800 p-6">
               <div className="text-5xl font-black text-violet-500">
                 {Number(item.avg_rating || 0).toFixed(1)}
@@ -172,7 +149,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
               </div>
             </div>
 
-            {/* SEKCE PŘIDÁNÍ RECENZE */}
+            {/* SEKCE PŘIDÁNÍ RECENZE - POUZE PRO PŘIHLÁŠENÉ */}
             <div className="mb-8 p-6 rounded-2xl bg-slate-900/50 border border-slate-800">
               <h3 className="mb-4 text-lg font-bold flex items-center gap-2">
                 <Send className="h-5 w-5 text-violet-500" /> Přidat hodnocení
@@ -191,7 +168,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
                   </div>
 
                   <Textarea
-                    placeholder="Napiš krátkou recenzi..."
+                    placeholder="Napiš, co si o tom myslíš..."
                     value={newText}
                     onChange={(e) => setNewText(e.target.value)}
                     className="min-h-[100px] border-slate-800 bg-slate-950 text-slate-200 focus:ring-violet-500"
@@ -200,7 +177,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
                   <Button
                     onClick={handleSubmit}
                     disabled={isSubmitting}
-                    className="w-full bg-violet-600 hover:bg-violet-500 text-white font-bold py-6 rounded-xl transition-all active:scale-95"
+                    className="w-full bg-violet-600 hover:bg-violet-500 text-white font-bold py-6 rounded-xl transition-all"
                   >
                     {isSubmitting ? 'Odesílám...' : 'Publikovat recenzi'}
                   </Button>
@@ -222,7 +199,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
 
             {/* SEKCE RECENZÍ */}
             <div>
-              <h3 className="mb-6 text-xl font-bold flex items-center gap-2">
+              <h3 className="mb-6 text-xl font-bold">
                 💬 Diskuze ({reviews.length})
               </h3>
 
@@ -239,12 +216,12 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
                   {reviews.map((review) => (
                     <div
                       key={review.id}
-                      className="group rounded-2xl border border-slate-800 bg-slate-900/50 p-5 transition-hover hover:border-slate-700"
+                      className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5"
                     >
                       <div className="mb-3 flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className="h-8 w-8 rounded-full bg-violet-600/20 flex items-center justify-center text-violet-500 font-bold text-xs">
-                            {review.author_name?.[0].toUpperCase() || 'A'}
+                            {review.author_name?.[0].toUpperCase() || 'U'}
                           </div>
                           <div>
                             <span className="block text-sm font-bold text-slate-200">
@@ -256,21 +233,8 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
                             </span>
                           </div>
                         </div>
-                        
-                        {/* TLACITKO SMAZAT - POUZE PRO ADMINY */}
-                        {isAdmin && (
-                          <button
-                            onClick={() => handleDelete(String(review.id))}
-                            className="p-2 text-slate-600 transition-colors hover:text-red-500 hover:bg-red-500/10 rounded-lg"
-                            title="Smazat recenzi"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        )}
+                        <StarRating rating={review.rating} size="sm" />
                       </div>
-                      
-                      <StarRating rating={review.rating} size="sm" className="mb-3" />
-                      
                       <p className="text-sm text-slate-400 leading-relaxed">
                         {review.comment}
                       </p>
