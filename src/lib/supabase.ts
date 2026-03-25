@@ -103,3 +103,44 @@ export async function getUserRole(userId: string): Promise<'admin' | 'user'> {
     .single();
   return data?.role || 'user';
 }
+
+
+// --- ADMIN AKCE ---
+
+// Schválení položky
+export async function approveItem(itemId: string) {
+  const { error } = await supabase
+    .from('items')
+    .update({ is_approved: true })
+    .eq('id', itemId);
+  return !error;
+}
+
+// Získání neschválených položek (pro admin panel)
+export async function getPendingItems() {
+  const { data } = await supabase
+    .from('items')
+    .select('*')
+    .eq('is_approved', false);
+  return data || [];
+}
+
+// Udělat z uživatele admina (podle emailu)
+export async function makeUserAdmin(email: string) {
+  const { error } = await supabase
+    .from('profiles')
+    .update({ role: 'admin' })
+    .eq('email', email);
+  return !error;
+}
+
+// Přidání nové položky uživatelem (čeká na schválení)
+export async function suggestItem(item: Partial<Item>) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  const { error } = await supabase.from('items').insert([
+    { ...item, is_approved: false, created_by: user.id }
+  ]);
+  return !error;
+}
