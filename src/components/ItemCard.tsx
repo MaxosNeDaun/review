@@ -32,28 +32,28 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
     >
       {/* Image Container */}
       <div
-        className="relative h-44 overflow-hidden"
-        style={{ background: item.color }}
+        className="relative h-44 overflow-hidden flex items-center justify-center bg-slate-900"
+        style={{ background: !item.image_url || imageError ? item.color : undefined }}
       >
         {item.image_url && !imageError ? (
           <img
             src={item.image_url}
             alt={item.title}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-110"
             onError={() => setImageError(true)}
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-6xl">
-            {item.emoji}
+          <div className="text-6xl transition-transform duration-500 group-hover:scale-110">
+            {item.emoji || catEmojis[item.cat]}
           </div>
         )}
         
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent" />
+        {/* Gradient overlay - dělá text pod obrázkem čitelnější */}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-60" />
         
         {/* Category badge */}
         <Badge
-          className="absolute right-3 top-3 bg-violet-600/90 text-xs font-semibold text-white backdrop-blur-sm hover:bg-violet-600"
+          className="absolute right-3 top-3 bg-violet-600/90 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-md border-none shadow-lg"
         >
           {catLabels[item.cat]}
         </Badge>
@@ -61,25 +61,30 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
 
       {/* Content */}
       <div className="p-4">
-        <h3 className="mb-1 line-clamp-1 text-base font-bold text-slate-100">
+        <h3 className="mb-1 line-clamp-1 text-base font-black uppercase tracking-tight text-slate-100 group-hover:text-violet-400 transition-colors">
           {item.title}
         </h3>
         
-        <p className="mb-2 text-xs font-medium text-violet-400">
-          {catEmojis[item.cat]} {item.genre}
-        </p>
+        <div className="flex items-center justify-between mb-2">
+           <p className="text-[10px] font-bold uppercase tracking-widest text-violet-400">
+            {item.genre}
+          </p>
+          <div className="flex items-center gap-1 text-violet-500 font-bold text-xs">
+            {Number(item.avg_rating || 0).toFixed(1)}
+          </div>
+        </div>
         
-        <p className="mb-3 line-clamp-2 text-sm text-slate-400">
+        <p className="mb-4 line-clamp-2 text-xs text-slate-500 leading-relaxed italic">
           {item.description}
         </p>
 
         {/* Footer */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between border-t border-slate-800/50 pt-3">
           <StarRating rating={item.avg_rating || 0} size="sm" />
           
-          <div className="flex items-center gap-1 text-xs text-slate-500">
-            <MessageSquare className="h-3 w-3" />
-            <span>{item.review_count || 0}</span>
+          <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-600 uppercase tracking-tighter">
+            <MessageSquare className="h-3 w-3 text-slate-700" />
+            <span>{item.review_count || 0} recenzí</span>
           </div>
         </div>
       </div>
