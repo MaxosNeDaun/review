@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Send, Calendar, Lock } from 'lucide-react';
+import { X, Send, Calendar, Lock } from 'lucide-react'; // Tyto ikony jsou nyní použity níže
 import {
   Dialog,
   DialogContent,
@@ -92,7 +92,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-hidden border-slate-800 bg-slate-950 p-0 text-white">
         
-        {/* HEADER S OBRÁZKEM NEBO EMOJI */}
+        {/* HEADER S OBRÁZKEM */}
         <div className="relative h-64 overflow-hidden flex items-center justify-center bg-slate-900">
           {item.image_url ? (
             <img 
@@ -168,13 +168,16 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
                   <Button
                     onClick={handleSubmit}
                     disabled={isSubmitting}
-                    className="w-full bg-violet-600 hover:bg-violet-500 text-white font-black uppercase py-6 rounded-xl transition-all"
+                    className="w-full bg-violet-600 hover:bg-violet-500 text-white font-bold py-6 rounded-xl transition-all"
                   >
                     {isSubmitting ? 'Odesílám...' : 'Publikovat'}
                   </Button>
                 </div>
               ) : (
                 <div className="py-4 text-center">
+                  <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 mb-3">
+                    <Lock className="h-6 w-6 text-slate-500" /> {/* Zde je použit Lock */}
+                  </div>
                   <p className="text-slate-500 text-xs font-bold uppercase mb-4">Pro hodnocení se musíš přihlásit</p>
                   <Button variant="outline" className="border-slate-700 hover:bg-slate-800 rounded-full text-xs font-bold" onClick={() => onOpenChange(false)}>
                     PŘIHLÁSIT SE
@@ -207,7 +210,10 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
                           </div>
                           <div>
                             <span className="block text-xs font-black text-slate-200 uppercase">{review.author_name}</span>
-                            <span className="text-[9px] uppercase font-bold text-slate-600">{new Date(review.created_at).toLocaleDateString('cs-CZ')}</span>
+                            <span className="text-[9px] uppercase font-bold text-slate-600 flex items-center gap-1">
+                              <Calendar className="h-3 w-3" /> {/* Zde je použit Calendar */}
+                              {new Date(review.created_at).toLocaleDateString('cs-CZ')}
+                            </span>
                           </div>
                         </div>
                         <StarRating rating={review.rating} size="sm" />
