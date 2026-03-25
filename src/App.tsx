@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Search, Moon, Sun, Film, Gamepad2, BookOpen, Trophy, LogIn, LogOut, User, ShieldCheck } from 'lucide-react';
+import { Search, Moon, Sun, Film, Gamepad2, BookOpen, Trophy, LogIn, LogOut, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
