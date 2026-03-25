@@ -3,7 +3,6 @@ import { X, Send, Calendar, Lock } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -44,6 +43,14 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   const MAX_CHARS = 200;
+
+  // Debugging: Podívej se do konzole (F12), co ti teče z databáze
+  useEffect(() => {
+    if (item) {
+      console.log("DEBUG: Data o položce v modalu:", item);
+      console.log("DEBUG: URL obrázku:", item.image_url);
+    }
+  }, [item]);
 
   useEffect(() => {
     if (item && open) {
@@ -92,15 +99,15 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-hidden border-slate-800 bg-slate-950 p-0 text-white shadow-2xl">
         
-        {/* HLAVNÍ FOTKA S FALLBACKEM NA EMOJI */}
+        {/* HLAVNÍ FOTKA S TITULKEM */}
         <div className="relative h-72 w-full overflow-hidden bg-slate-900">
           {item.image_url ? (
             <img 
               src={item.image_url} 
               alt={item.title} 
-              className="h-full w-full object-cover opacity-90 transition-opacity hover:opacity-100"
+              className="h-full w-full object-cover opacity-80"
               onError={(e) => {
-                // Pokud URL obrázku nefunguje, skryjeme rozbitý obrázek
+                console.error("Chyba: Obrázek se nepodařilo načíst z URL:", item.image_url);
                 (e.target as HTMLImageElement).style.display = 'none';
               }}
             />
@@ -133,8 +140,8 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
         <ScrollArea className="max-h-[calc(90vh-18rem)]">
           <div className="p-8">
             
-            {/* HODNOCENÍ */}
-            <div className="mb-10 flex items-center justify-between rounded-3xl bg-slate-900/50 border border-slate-800 p-8 shadow-inner">
+            {/* STATS */}
+            <div className="mb-10 flex items-center justify-between rounded-3xl bg-slate-900/50 border border-slate-800 p-8">
               <div className="flex items-center gap-6">
                 <div className="text-6xl font-black text-violet-500">
                   {Number(item.avg_rating || 0).toFixed(1)}
@@ -148,10 +155,10 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
               </div>
             </div>
 
-            {/* FORMULÁŘ PRO NOVOU RECENZI */}
+            {/* FORM */}
             <div className="mb-10 p-6 rounded-3xl bg-violet-600/5 border border-violet-500/20">
-              <h3 className="mb-6 text-sm font-black uppercase tracking-[0.2em] flex items-center gap-2 text-violet-400">
-                <Send className="h-4 w-4" /> Tvůj názor
+              <h3 className="mb-6 text-sm font-black uppercase tracking-widest flex items-center gap-2 text-violet-400">
+                <Send className="h-4 w-4" /> Tvůj verdikt
               </h3>
               
               {currentUser ? (
@@ -160,7 +167,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
                   
                   <div className="relative">
                     <Textarea
-                      placeholder="Napiš stručnou recenzi..."
+                      placeholder="Co si o tom myslíš?"
                       value={newText}
                       onChange={(e) => setNewText(e.target.value)}
                       maxLength={MAX_CHARS}
@@ -176,7 +183,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
                     disabled={isSubmitting}
                     className="w-full bg-violet-600 hover:bg-violet-500 h-14 rounded-2xl font-black text-lg shadow-xl shadow-violet-500/20 transition-all active:scale-95"
                   >
-                    {isSubmitting ? 'Odesílám...' : 'POSLAT RECENZI'}
+                    {isSubmitting ? 'Ukládám...' : 'POSLAT RECENZI'}
                   </Button>
                 </div>
               ) : (
@@ -185,7 +192,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
                     <Lock className="h-6 w-6 text-slate-500" />
                   </div>
                   <p className="text-slate-400 font-bold mb-4 uppercase text-[10px] tracking-widest">Pro hodnocení se musíš přihlásit</p>
-                  <Button variant="outline" className="rounded-full px-10 font-bold border-slate-700 hover:bg-white hover:text-black transition-colors" onClick={() => onOpenChange(false)}>
+                  <Button variant="outline" className="rounded-full px-10 font-bold border-slate-700" onClick={() => onOpenChange(false)}>
                     PŘIHLÁSIT SE
                   </Button>
                 </div>
@@ -194,29 +201,29 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
 
             <Separator className="mb-10 bg-slate-800" />
 
-            {/* VÝPIS RECENZÍ */}
+            {/* REVIEWS LIST */}
             <div className="space-y-6">
-              <h3 className="text-2xl font-black italic uppercase tracking-tighter text-white/90">Komunita říká:</h3>
+              <h3 className="text-2xl font-black italic uppercase tracking-tighter">Recenze</h3>
               
               {isLoading ? (
-                <div className="space-y-4">
-                   {[1,2].map(i => <div key={i} className="h-32 w-full animate-pulse bg-slate-900 rounded-3xl" />)}
+                <div className="space-y-4 animate-pulse">
+                   {[1,2].map(i => <div key={i} className="h-24 bg-slate-900 rounded-3xl" />)}
                 </div>
               ) : reviews.length === 0 ? (
                 <div className="text-center py-16 border-2 border-dashed border-slate-800 rounded-3xl">
-                  <p className="text-slate-600 font-bold uppercase tracking-widest text-xs">Zatím žádné ohlasy. Buď první!</p>
+                  <p className="text-slate-600 font-bold uppercase tracking-widest text-xs">Zatím žádné ohlasy.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {reviews.map((review) => (
-                    <div key={review.id} className="rounded-3xl border border-slate-800 bg-slate-900/40 p-6 hover:bg-slate-900/60 transition-colors">
+                    <div key={review.id} className="rounded-3xl border border-slate-800 bg-slate-900/40 p-6">
                       <div className="mb-4 flex items-center justify-between">
                         <div className="flex items-center gap-4">
                           <div className="h-10 w-10 rounded-full bg-violet-600 flex items-center justify-center text-white font-black text-xs">
                             {review.author_name?.[0].toUpperCase()}
                           </div>
                           <div>
-                            <span className="block font-black text-slate-100 uppercase text-xs tracking-tight">{review.author_name}</span>
+                            <span className="block font-black text-slate-100 uppercase text-xs">{review.author_name}</span>
                             <span className="flex items-center gap-1 text-[9px] font-bold text-slate-600 uppercase tracking-widest">
                               <Calendar className="h-3 w-3" />
                               {new Date(review.created_at).toLocaleDateString('cs-CZ')}
