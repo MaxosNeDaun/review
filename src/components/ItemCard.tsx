@@ -1,9 +1,6 @@
-import { useState } from 'react';
-import { MessageSquare } from 'lucide-react';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { StarRating } from './StarRating';
+import { Star } from 'lucide-react';
 import type { Item } from '@/types';
+import { Badge } from '@/components/ui/badge';
 
 interface ItemCardProps {
   item: Item;
@@ -16,78 +13,74 @@ const catLabels: Record<string, string> = {
   book: 'Kniha',
 };
 
-const catEmojis: Record<string, string> = {
-  film: '🎬',
-  game: '🎮',
-  book: '📚',
-};
-
 export function ItemCard({ item, onClick }: ItemCardProps) {
-  const [imageError, setImageError] = useState(false);
-
   return (
-    <Card
+    <div 
       onClick={onClick}
-      className="group cursor-pointer overflow-hidden border border-slate-800 bg-slate-900/50 transition-all duration-300 hover:-translate-y-1.5 hover:border-violet-500/50 hover:shadow-xl hover:shadow-violet-500/10"
+      className="group relative cursor-pointer overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl dark:border-slate-800 dark:bg-slate-900"
     >
-      {/* Image Container */}
-      <div
-        className="relative h-44 overflow-hidden flex items-center justify-center bg-slate-900"
-        style={{ background: !item.image_url || imageError ? item.color : undefined }}
-      >
-        {item.image_url && !imageError ? (
-          <img
-            src={item.image_url}
-            alt={item.title}
-            className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-110"
-            onError={() => setImageError(true)}
+      {/* OBRÁZEK / COVER */}
+      <div className="relative h-64 w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
+        {item.image_url ? (
+          <img 
+            src={item.image_url} 
+            alt={item.title} 
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1594909122845-11baa439b7bf?q=80&w=2070&auto=format&fit=crop';
+            }}
           />
         ) : (
-          <div className="text-6xl transition-transform duration-500 group-hover:scale-110">
-            {item.emoji || catEmojis[item.cat]}
+          <div 
+            className="flex h-full w-full items-center justify-center text-6xl shadow-inner"
+            style={{ backgroundColor: item.color || '#1e293b' }}
+          >
+            {item.emoji || '🎬'}
           </div>
         )}
         
-        {/* Gradient overlay - dělá text pod obrázkem čitelnější */}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-60" />
+        {/* GRADIENT PŘES OBRÁZEK - zajišťuje čitelnost bílého textu i v light modu */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80" />
         
-        {/* Category badge */}
-        <Badge
-          className="absolute right-3 top-3 bg-violet-600/90 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-md border-none shadow-lg"
-        >
-          {catLabels[item.cat]}
-        </Badge>
+        {/* TEXTY NA OBRÁZKU (Vždy bílé díky gradientu) */}
+        <div className="absolute bottom-4 left-5 right-5">
+          <div className="flex gap-2 mb-2">
+            <Badge className="bg-violet-600 text-white border-none text-[9px] font-black uppercase tracking-wider px-2 py-0.5">
+              {catLabels[item.cat] || item.cat}
+            </Badge>
+            <Badge variant="outline" className="text-white border-white/30 backdrop-blur-md text-[9px] font-bold uppercase tracking-wider px-2 py-0.5">
+              {item.genre}
+            </Badge>
+          </div>
+          <h3 className="text-xl font-black italic uppercase tracking-tighter text-white drop-shadow-lg line-clamp-1">
+            {item.title}
+          </h3>
+        </div>
       </div>
 
-      {/* Content */}
-      <div className="p-4">
-        <h3 className="mb-1 line-clamp-1 text-base font-black uppercase tracking-tight text-slate-100 group-hover:text-violet-400 transition-colors">
-          {item.title}
-        </h3>
-        
-        <div className="flex items-center justify-between mb-2">
-           <p className="text-[10px] font-bold uppercase tracking-widest text-violet-400">
-            {item.genre}
-          </p>
-          <div className="flex items-center gap-1 text-violet-500 font-bold text-xs">
+      {/* SPODNÍ INFO LIŠTA (Adaptivní barvy) */}
+      <div className="flex items-center justify-between p-5 bg-white dark:bg-slate-900/90">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center bg-yellow-400/10 p-1.5 rounded-lg">
+            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+          </div>
+          <span className="text-lg font-black text-slate-900 dark:text-white tracking-tight">
             {Number(item.avg_rating || 0).toFixed(1)}
-          </div>
+          </span>
         </div>
         
-        <p className="mb-4 line-clamp-2 text-xs text-slate-500 leading-relaxed italic">
-          {item.description}
-        </p>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between border-t border-slate-800/50 pt-3">
-          <StarRating rating={item.avg_rating || 0} size="sm" />
-          
-          <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-600 uppercase tracking-tighter">
-            <MessageSquare className="h-3 w-3 text-slate-700" />
-            <span>{item.review_count || 0} recenzí</span>
-          </div>
+        <div className="flex flex-col items-end">
+          <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">
+            {item.review_count || 0}
+          </span>
+          <span className="text-[8px] font-bold text-slate-300 dark:text-slate-600 uppercase tracking-widest">
+            Recenzí
+          </span>
         </div>
       </div>
-    </Card>
+
+      {/* HOVER EFEKT - LINKA NA SPODKU */}
+      <div className="absolute bottom-0 h-1 w-0 bg-violet-600 transition-all duration-300 group-hover:w-full" />
+    </div>
   );
 }
