@@ -189,10 +189,10 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
 
             {/* RECENZE KOMUNITY */}
             <div className="space-y-4">
-              <h3 className="font-black italic uppercase text-lg tracking-tight">KOMUNITA ŘÍKÁ</h3>
+              <h3 className="font-black italic uppercase text-lg tracking-tight">Recenze</h3>
               {reviews.length === 0 ? (
                 <p className="text-slate-600 text-xs uppercase font-bold text-center py-6 border border-slate-900 rounded-2xl italic">
-                  Zatím žádné ohlasy. Buď první!
+                  Zatím žádné recenze
                 </p>
               ) : (
                 reviews.map((r) => (
