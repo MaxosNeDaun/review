@@ -120,14 +120,14 @@ export default function App() {
         <header className="px-4 py-24 text-center">
           <h1 className="text-6xl font-black mb-4 tracking-tight md:text-8xl">Review<span className="text-violet-600">Hub</span></h1>
           <p className="mx-auto max-w-2xl text-muted-foreground text-xl font-medium">
-            Komunitní hodnocení tvých oblíbených pecek.
+            Komunitní hodnocení
           </p>
         </header>
 
         {top5.length > 0 && (
           <section className="mx-auto max-w-7xl px-4 mb-20">
             <h2 className="text-2xl font-black mb-8 flex items-center gap-3">
-              <Trophy className="text-amber-500 h-7 w-7" /> SÍŇ SLÁVY
+              <Trophy className="text-amber-500 h-7 w-7" /> TOP 5
             </h2>
             <div className="flex gap-6 overflow-x-auto pb-6 scrollbar-hide">
               {top5.map((item, i) => (
