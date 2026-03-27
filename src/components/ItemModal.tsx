@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Send, Calendar, Lock } from 'lucide-react';
+import { X, Send, Calendar, Lock, Trash2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -43,6 +43,8 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   const MAX_CHARS = 200;
+  // ZDE ZADEJ SVŮJ ADMIN EMAIL
+  const ADMIN_EMAIL = 'tvuj@email.cz';
 
   useEffect(() => {
     if (item && open) {
@@ -68,7 +70,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
     if (!item || !currentUser) return;
     if (newRating === 0) return toast.error('Vyber hodnocení!');
     if (!newText.trim()) return toast.error('Napiš text recenze!');
-    if (newText.length > MAX_CHARS) return toast.error('Moc dlouhé!');
+    if (newText.length > MAX_CHARS) return toast.error('Příliš dlouhý text!');
 
     setIsSubmitting(true);
     const authorName = currentUser.email?.split('@')[0] || 'Uživatel';
@@ -85,6 +87,23 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
     setIsSubmitting(false);
   };
 
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!confirm('Opravdu chceš tuto recenzi smazat?')) return;
+
+    const { error } = await supabase
+      .from('reviews')
+      .delete()
+      .eq('id', reviewId);
+
+    if (error) {
+      toast.error('Chyba při mazání: ' + error.message);
+    } else {
+      toast.success('Recenze smazána');
+      await loadReviews();
+      onReviewAdded();
+    }
+  };
+
   if (!item) return null;
 
   return (
@@ -98,9 +117,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
               src={item.image_url} 
               alt={item.title} 
               className="h-full w-full object-cover opacity-80"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
-              }}
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-8xl" style={{ background: item.color }}>
@@ -122,7 +139,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
               <Badge className="bg-violet-600 font-bold uppercase tracking-wider">{catLabels[item.cat]}</Badge>
               <Badge variant="outline" className="text-white border-white/20 backdrop-blur-md uppercase tracking-wider">{item.genre}</Badge>
             </div>
-            <DialogTitle className="text-4xl font-black text-white drop-shadow-md uppercase italic">
+            <DialogTitle className="text-4xl font-black text-white drop-shadow-md uppercase italic leading-tight">
               {item.title}
             </DialogTitle>
           </div>
@@ -131,7 +148,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
         <ScrollArea className="max-h-[calc(90vh-18rem)]">
           <div className="p-8">
             
-            {/* PRŮMĚRNÉ HODNOCENÍ */}
+            {/* STATS */}
             <div className="mb-10 flex items-center justify-between rounded-3xl bg-slate-900/50 border border-slate-800 p-8 shadow-inner">
               <div className="flex items-center gap-6">
                 <div className="text-6xl font-black text-violet-500 leading-none">
@@ -140,13 +157,13 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
                 <div>
                   <StarRating rating={Number(item.avg_rating || 0)} size="lg" />
                   <p className="mt-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                    Založeno na {item.review_count || 0} hlasech
+                    {item.review_count || 0} HLASŮ CELKEM
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* FORMULÁŘ PRO NOVOU RECENZI */}
+            {/* FORMULÁŘ */}
             <div className="mb-10 p-6 rounded-3xl bg-violet-600/5 border border-violet-500/20">
               <h3 className="mb-6 text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-2 text-violet-400">
                 <Send className="h-3 w-3" /> Tvůj názor
@@ -158,7 +175,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
                   
                   <div className="relative">
                     <Textarea
-                      placeholder="Napiš recenzi..."
+                      placeholder="Napiš krátkou recenzi..."
                       value={newText}
                       onChange={(e) => setNewText(e.target.value)}
                       maxLength={MAX_CHARS}
@@ -172,9 +189,9 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
                   <Button
                     onClick={handleSubmit}
                     disabled={isSubmitting}
-                    className="w-full bg-violet-600 hover:bg-violet-500 h-14 rounded-2xl font-black text-sm tracking-widest shadow-xl transition-all active:scale-95"
+                    className="w-full bg-violet-600 hover:bg-violet-500 h-14 rounded-2xl font-black text-sm tracking-widest shadow-xl transition-all active:scale-95 text-white"
                   >
-                    {isSubmitting ? 'UKLÁDÁM...' : 'POSLAT RECENZI'}
+                    {isSubmitting ? 'ODESÍLÁM...' : 'POSLAT HODNOCENÍ'}
                   </Button>
                 </div>
               ) : (
@@ -182,7 +199,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
                   <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 mb-4">
                     <Lock className="h-5 w-5 text-slate-600" />
                   </div>
-                  <p className="text-slate-500 font-bold mb-4 uppercase text-[9px] tracking-widest italic">Pro hodnocení se musíš přihlásit</p>
+                  <p className="text-slate-500 font-bold mb-4 uppercase text-[9px] tracking-widest italic">Přihlas se pro hodnocení</p>
                 </div>
               )}
             </div>
@@ -191,7 +208,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
 
             {/* VÝPIS RECENZÍ */}
             <div className="space-y-6">
-              <h3 className="text-2xl font-black italic uppercase tracking-tighter text-white/90">Ostatní říkají:</h3>
+              <h3 className="text-2xl font-black italic uppercase tracking-tighter text-white/90">Komunita říká</h3>
               
               {isLoading ? (
                 <div className="space-y-4">
@@ -199,12 +216,12 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
                 </div>
               ) : reviews.length === 0 ? (
                 <div className="text-center py-16 border-2 border-dashed border-slate-800 rounded-3xl">
-                  <p className="text-slate-700 font-bold uppercase tracking-widest text-[10px]">Zatím ticho. Buď první!</p>
+                  <p className="text-slate-700 font-bold uppercase tracking-widest text-[10px]">Zatím žádné recenze.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {reviews.map((review) => (
-                    <div key={review.id} className="rounded-3xl border border-slate-800 bg-slate-900/40 p-6 overflow-hidden">
+                    <div key={review.id} className="rounded-3xl border border-slate-800 bg-slate-900/40 p-6 overflow-hidden transition-all hover:bg-slate-900/60 shadow-sm">
                       <div className="mb-4 flex items-center justify-between">
                         <div className="flex items-center gap-4">
                           <div className="h-10 w-10 rounded-full bg-violet-600 flex items-center justify-center text-white font-black text-[10px]">
@@ -220,10 +237,22 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
                             </span>
                           </div>
                         </div>
-                        <StarRating rating={review.rating} size="sm" />
+                        
+                        <div className="flex items-center gap-3">
+                          <StarRating rating={review.rating} size="sm" />
+                          
+                          {/* ADMIN SMAZÁNÍ */}
+                          {currentUser?.email === ADMIN_EMAIL && (
+                            <button 
+                              onClick={() => handleDeleteReview(review.id)}
+                              className="p-2 text-slate-600 hover:text-red-500 transition-colors"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                       
-                      {/* FIX PRO DLOUHÝ TEXT: break-all natvrdo zalomí řádek */}
                       <p className="text-slate-400 leading-relaxed font-medium italic text-sm break-all whitespace-pre-wrap">
                         "{review.comment}"
                       </p>
