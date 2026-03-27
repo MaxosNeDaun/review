@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Send, Calendar, Lock, Trash2 } from 'lucide-react';
+import { X, Lock, Trash2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -39,10 +39,9 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
   const [newRating, setNewRating] = useState(0);
   const [newText, setNewText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
 
-  // === TADY NASTAV SVŮJ EMAIL ===
+  // === TADY NASTAV SVŮJ PŘIHLAŠOVACÍ EMAIL ===
   const MY_ADMIN_EMAIL = 'admin@gmail.com'; 
 
   const MAX_CHARS = 200;
@@ -57,19 +56,12 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     setCurrentUser(session?.user ?? null);
-    
-    // Debug: Otevři F12 v prohlížeči a uvidíš, jestli jsi přihlášen správně
-    if (session?.user) {
-      console.log("Přihlášen jako:", session.user.email);
-    }
   };
 
   const loadReviews = async () => {
     if (!item) return;
-    setIsLoading(true);
     const data = await getReviewsByItemId(String(item.id));
     setReviews(data);
-    setIsLoading(false);
   };
 
   const handleSubmit = async () => {
@@ -95,9 +87,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
 
   const handleDelete = async (id: string) => {
     if (!confirm('Smazat recenzi?')) return;
-    
     const { error } = await supabase.from('reviews').delete().eq('id', id);
-    
     if (error) {
       toast.error('Nepodařilo se smazat');
     } else {
@@ -127,7 +117,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
             <X className="h-5 w-5" />
           </button>
           <div className="absolute bottom-6 left-6">
-            <Badge className="bg-violet-600 mb-2 uppercase text-[10px] tracking-widest">{catLabels[item.cat]}</Badge>
+            <Badge className="bg-violet-600 mb-2 uppercase text-[10px] tracking-widest border-none text-white">{catLabels[item.cat]}</Badge>
             <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter">{item.title}</DialogTitle>
           </div>
         </div>
@@ -135,7 +125,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
         <ScrollArea className="max-h-[calc(90vh-16rem)]">
           <div className="p-8">
             
-            {/* PRŮMĚR */}
+            {/* STATS */}
             <div className="mb-8 flex items-center gap-6 rounded-2xl bg-slate-900/50 p-6 border border-slate-800">
               <div className="text-5xl font-black text-violet-500">{Number(item.avg_rating || 0).toFixed(1)}</div>
               <div>
@@ -154,16 +144,16 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
                     value={newText} 
                     onChange={(e) => setNewText(e.target.value)} 
                     maxLength={MAX_CHARS}
-                    className="bg-slate-950 border-slate-800 rounded-xl min-h-[80px] text-sm break-all"
+                    className="bg-slate-950 border-slate-800 rounded-xl min-h-[80px] text-sm break-all focus:ring-violet-500"
                   />
                   <div className="absolute bottom-2 right-3 text-[9px] text-slate-600">{newText.length}/{MAX_CHARS}</div>
                 </div>
-                <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full bg-violet-600 hover:bg-violet-500 font-bold uppercase tracking-widest">
+                <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full bg-violet-600 hover:bg-violet-500 font-bold uppercase tracking-widest text-white">
                   {isSubmitting ? 'Posílám...' : 'Uložit hodnocení'}
                 </Button>
               </div>
             ) : (
-              <div className="mb-10 text-center py-4 border border-dashed border-slate-800 rounded-2xl">
+              <div className="mb-10 text-center py-6 border border-dashed border-slate-800 rounded-2xl">
                 <p className="text-xs text-slate-500 uppercase font-bold tracking-widest flex items-center justify-center gap-2">
                   <Lock className="h-3 w-3" /> Přihlas se pro hodnocení
                 </p>
@@ -172,37 +162,44 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
 
             <Separator className="mb-8 bg-slate-800" />
 
-            {/* SEZNAM RECENZÍ */}
+            {/* VÝPIS RECENZÍ */}
             <div className="space-y-4">
               <h3 className="font-black italic uppercase text-lg">Poslední ohlasy</h3>
-              {reviews.map((r) => (
-                <div key={r.id} className="rounded-2xl border border-slate-800 bg-slate-900/30 p-5">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-violet-600 flex items-center justify-center font-bold text-xs uppercase">{r.author_name[0]}</div>
-                      <div>
-                        <div className="text-[10px] font-black uppercase tracking-tight text-slate-200">{r.author_name}</div>
-                        <div className="text-[8px] text-slate-600 uppercase font-bold tracking-widest">{new Date(r.created_at).toLocaleDateString()}</div>
+              {reviews.length === 0 ? (
+                <p className="text-slate-600 text-xs uppercase font-bold text-center py-4">Zatím žádné recenze</p>
+              ) : (
+                reviews.map((r) => (
+                  <div key={r.id} className="rounded-2xl border border-slate-800 bg-slate-900/30 p-5">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-full bg-violet-600 flex items-center justify-center font-bold text-xs uppercase text-white">
+                          {r.author_name?.[0] || 'U'}
+                        </div>
+                        <div>
+                          <div className="text-[10px] font-black uppercase tracking-tight text-slate-200">{r.author_name}</div>
+                          <div className="text-[8px] text-slate-600 uppercase font-bold tracking-widest">{new Date(r.created_at).toLocaleDateString()}</div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-3">
+                        <StarRating rating={r.rating} size="sm" />
+                        
+                        {/* TLAČÍTKO SMAZAT - ADMIN ONLY */}
+                        {currentUser?.email?.toLowerCase() === MY_ADMIN_EMAIL.toLowerCase() && (
+                          <button 
+                            onClick={() => handleDelete(r.id)}
+                            className="p-1.5 text-slate-600 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                            title="Smazat recenzi"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
                     </div>
-                    
-                    <div className="flex items-center gap-3">
-                      <StarRating rating={r.rating} size="sm" />
-                      
-                      {/* TLAČÍTKO SMAZAT - POUZE PRO ADMINA */}
-                      {currentUser?.email?.toLowerCase() === MY_ADMIN_EMAIL.toLowerCase() && (
-                        <button 
-                          onClick={() => handleDelete(r.id)}
-                          className="p-1.5 text-slate-600 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      )}
-                    </div>
+                    <p className="text-sm text-slate-400 italic break-all whitespace-pre-wrap leading-relaxed">"{r.comment}"</p>
                   </div>
-                  <p className="text-sm text-slate-400 italic break-all whitespace-pre-wrap">"{r.comment}"</p>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </ScrollArea>
