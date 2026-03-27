@@ -22,7 +22,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
       if (isRegister) {
         const { error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
-        alert('Registrace úspěšná! Zkontroluj si email pro potvrzení.');
+        alert('Stepik Pepik');
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
