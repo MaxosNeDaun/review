@@ -52,6 +52,14 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
     }
   }, [item, open]);
 
+  useEffect(() => {
+    if (currentUser && item) {
+      checkIfAlreadyReviewed(currentUser.id);
+    } else {
+      setHasReviewed(false);
+    }
+  }, [currentUser, item]);
+
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     setCurrentUser(session?.user ?? null);
@@ -74,14 +82,6 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
     setHasReviewed(!!data);
   };
 
-  useEffect(() => {
-    if (currentUser && item) {
-      checkIfAlreadyReviewed(currentUser.id);
-    } else {
-      setHasReviewed(false);
-    }
-  }, [currentUser, item]);
-
   const handleSubmit = async () => {
     if (!item || !currentUser) return;
     if (newRating === 0) return toast.error('Vyber hodnocení!');
@@ -91,7 +91,9 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
     setIsSubmitting(true);
     const authorName = currentUser.email?.split('@')[0] || 'Uživatel';
 
-    const review = await addReview(String(item.id), authorName, newRating, newText.trim());
+    const { data: review, alreadyReviewed } = await addReview(
+      String(item.id), authorName, newRating, newText.trim()
+    );
 
     if (review) {
       toast.success('Uloženo!');
@@ -100,8 +102,11 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
       setHasReviewed(true);
       await loadReviews();
       onReviewAdded();
-    } else {
+    } else if (alreadyReviewed) {
       toast.error('Recenzi jsi již přidal!');
+      setHasReviewed(true);
+    } else {
+      toast.error('Něco se pokazilo, zkus to znovu.');
     }
 
     setIsSubmitting(false);
