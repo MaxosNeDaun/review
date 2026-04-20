@@ -48,9 +48,9 @@ export async function addReview(
   author: string, 
   rating: number, 
   comment: string
-): Promise<Review | null> {
+): Promise<{ data: Review | null; alreadyReviewed: boolean }> {
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
+  if (!user) return { data: null, alreadyReviewed: false };
 
   const { data, error } = await supabase
     .from('reviews')
@@ -59,16 +59,18 @@ export async function addReview(
       author_name: author, 
       rating: rating, 
       comment: comment,
-      user_id: user.id,  // <-- přidáno
+      user_id: user.id,
     }])
     .select()
     .single();
 
   if (error) {
-    console.error('Chyba při přidávání recenze:', error.message);
-    return null;
+    console.error('Chyba při přidávání recenze:', error.message, error.code);
+    const alreadyReviewed = error.code === '23505';
+    return { data: null, alreadyReviewed };
   }
-  return data as Review;
+
+  return { data: data as Review, alreadyReviewed: false };
 }
 
 export async function getReviewsByItemId(itemId: string): Promise<Review[]> {
