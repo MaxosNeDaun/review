@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-// Oprava TS1484: Přidáno slovo 'type' pro kompatibilitu s verbatimModuleSyntax
 import { type Item, type Review } from '../types'; 
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
@@ -44,20 +43,23 @@ export async function deleteItem(itemId: string): Promise<boolean> {
 
 // --- RECENZE FUNKCE ---
 
-// Oprava TS2305: Přidán chybějící export addReview pro ItemModal.tsx
 export async function addReview(
   itemId: string, 
   author: string, 
   rating: number, 
   comment: string
 ): Promise<Review | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
   const { data, error } = await supabase
     .from('reviews')
     .insert([{ 
       item_id: itemId, 
       author_name: author, 
       rating: rating, 
-      comment: comment 
+      comment: comment,
+      user_id: user.id,  // <-- přidáno
     }])
     .select()
     .single();
@@ -104,10 +106,8 @@ export async function getUserRole(userId: string): Promise<'admin' | 'user'> {
   return data?.role || 'user';
 }
 
-
 // --- ADMIN AKCE ---
 
-// Schválení položky
 export async function approveItem(itemId: string) {
   const { error } = await supabase
     .from('items')
@@ -116,7 +116,6 @@ export async function approveItem(itemId: string) {
   return !error;
 }
 
-// Získání neschválených položek (pro admin panel)
 export async function getPendingItems() {
   const { data } = await supabase
     .from('items')
@@ -125,7 +124,6 @@ export async function getPendingItems() {
   return data || [];
 }
 
-// Udělat z uživatele admina (podle emailu)
 export async function makeUserAdmin(email: string) {
   const { error } = await supabase
     .from('profiles')
@@ -134,7 +132,6 @@ export async function makeUserAdmin(email: string) {
   return !error;
 }
 
-// Přidání nové položky uživatelem (čeká na schválení)
 export async function suggestItem(item: Partial<Item>) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return false;
