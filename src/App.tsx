@@ -18,6 +18,18 @@ import { getItems, subscribeToAllReviews, supabase } from '@/lib/supabase';
 import type { Item, Category, SortOption } from '@/types';
 import './App.css';
 
+const CAT_LABELS: Record<string, string> = {
+  film: 'Filmy',
+  game: 'Hry',
+  book: 'Knihy',
+};
+
+const CAT_EMOJIS: Record<string, string> = {
+  film: '🎬',
+  game: '🎮',
+  book: '📖',
+};
+
 export default function App() {
   const [items, setItems] = useState<Item[]>([]);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
@@ -37,7 +49,7 @@ export default function App() {
 
   useEffect(() => {
     loadData();
-    
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
     });
@@ -58,25 +70,53 @@ export default function App() {
     return [...new Set(filtered.map(i => i.genre))].sort();
   }, [items, category]);
 
-  const top5 = useMemo(() => {
-    return [...items].sort((a, b) => (b.avg_rating || 0) - (a.avg_rating || 0)).slice(0, 5);
+  // Top 5 pro každou kategorii zvlášť
+  const top5Films = useMemo(() => {
+    return [...items]
+      .filter(i => i.cat === 'film')
+      .sort((a, b) => (b.avg_rating || 0) - (a.avg_rating || 0))
+      .slice(0, 5);
+  }, [items]);
+
+  const top5Games = useMemo(() => {
+    return [...items]
+      .filter(i => i.cat === 'game')
+      .sort((a, b) => (b.avg_rating || 0) - (a.avg_rating || 0))
+      .slice(0, 5);
+  }, [items]);
+
+  const top5Books = useMemo(() => {
+    return [...items]
+      .filter(i => i.cat === 'book')
+      .sort((a, b) => (b.avg_rating || 0) - (a.avg_rating || 0))
+      .slice(0, 5);
   }, [items]);
 
   const filteredItems = useMemo(() => {
     let result = [...items];
     if (category !== 'all') result = result.filter(i => i.cat === category);
     if (genre !== 'all') result = result.filter(i => i.genre === genre);
-    
+
     if (sort === 'rating') result.sort((a, b) => (b.avg_rating || 0) - (a.avg_rating || 0));
     else if (sort === 'name') result.sort((a, b) => a.title.localeCompare(b.title));
     else if (sort === 'reviews') result.sort((a, b) => (b.review_count || 0) - (a.review_count || 0));
     return result;
   }, [items, category, genre, sort]);
 
+  const openItem = (item: Item) => {
+    setSelectedItem(item);
+    setModalOpen(true);
+  };
+
+  // Zobraz jen relevantní Top 5 sekce podle vybrané kategorie
+  const showFilms = category === 'all' || category === 'film';
+  const showGames = category === 'all' || category === 'game';
+  const showBooks = category === 'all' || category === 'book';
+
   return (
     <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
       <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
-        
+
         <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl px-4 py-4">
           <div className="mx-auto flex max-w-7xl items-center justify-between">
             <div className="flex items-center gap-2 font-black text-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 bg-clip-text text-transparent uppercase tracking-tighter">
@@ -124,41 +164,75 @@ export default function App() {
           </p>
         </header>
 
-        {top5.length > 0 && (
-          <section className="mx-auto max-w-7xl px-4 mb-20">
-            <h2 className="text-2xl font-black mb-8 flex items-center gap-3">
-              <Trophy className="text-amber-500 h-7 w-7" /> TOP 5
-            </h2>
-            <div className="flex gap-6 overflow-x-auto pb-6 scrollbar-hide">
-              {top5.map((item, i) => (
-                <Top5Card key={item.id} item={item} rank={i + 1} onClick={() => { setSelectedItem(item); setModalOpen(true); }} />
-              ))}
-            </div>
-          </section>
-        )}
+        {/* TOP 5 SEKCE */}
+        <div className="mx-auto max-w-7xl px-4 mb-20 space-y-16">
+
+          {showFilms && top5Films.length > 0 && (
+            <section>
+              <h2 className="text-2xl font-black mb-8 flex items-center gap-3">
+                <Trophy className="text-amber-500 h-7 w-7" />
+                {CAT_EMOJIS.film} TOP 5 {CAT_LABELS.film}
+              </h2>
+              <div className="flex gap-6 overflow-x-auto pb-6 scrollbar-hide">
+                {top5Films.map((item, i) => (
+                  <Top5Card key={item.id} item={item} rank={i + 1} onClick={() => openItem(item)} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {showGames && top5Games.length > 0 && (
+            <section>
+              <h2 className="text-2xl font-black mb-8 flex items-center gap-3">
+                <Trophy className="text-amber-500 h-7 w-7" />
+                {CAT_EMOJIS.game} TOP 5 {CAT_LABELS.game}
+              </h2>
+              <div className="flex gap-6 overflow-x-auto pb-6 scrollbar-hide">
+                {top5Games.map((item, i) => (
+                  <Top5Card key={item.id} item={item} rank={i + 1} onClick={() => openItem(item)} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {showBooks && top5Books.length > 0 && (
+            <section>
+              <h2 className="text-2xl font-black mb-8 flex items-center gap-3">
+                <Trophy className="text-amber-500 h-7 w-7" />
+                {CAT_EMOJIS.book} TOP 5 {CAT_LABELS.book}
+              </h2>
+              <div className="flex gap-6 overflow-x-auto pb-6 scrollbar-hide">
+                {top5Books.map((item, i) => (
+                  <Top5Card key={item.id} item={item} rank={i + 1} onClick={() => openItem(item)} />
+                ))}
+              </div>
+            </section>
+          )}
+
+        </div>
 
         <main className="mx-auto max-w-7xl px-4 pb-20">
           <div className="flex flex-col md:flex-row gap-6 mb-12 justify-between items-center border-t border-border/50 pt-12">
             <div className="flex gap-2 flex-wrap">
-              <Badge 
-                className="cursor-pointer px-4 py-2 rounded-full text-sm font-bold" 
-                variant={genre === 'all' ? 'default' : 'outline'} 
+              <Badge
+                className="cursor-pointer px-4 py-2 rounded-full text-sm font-bold"
+                variant={genre === 'all' ? 'default' : 'outline'}
                 onClick={() => setGenre('all')}
               >
                 Všechny žánry
               </Badge>
               {genres.map(g => (
-                <Badge 
-                  key={g} 
-                  className="cursor-pointer px-4 py-2 rounded-full text-sm font-bold" 
-                  variant={genre === g ? 'default' : 'outline'} 
+                <Badge
+                  key={g}
+                  className="cursor-pointer px-4 py-2 rounded-full text-sm font-bold"
+                  variant={genre === g ? 'default' : 'outline'}
                   onClick={() => setGenre(g)}
                 >
                   {g}
                 </Badge>
               ))}
             </div>
-            
+
             <Select value={sort} onValueChange={(v) => setSort(v as SortOption)}>
               <SelectTrigger className="w-56 rounded-xl bg-muted/50 border-none h-11 font-bold">
                 <SelectValue />
@@ -173,7 +247,7 @@ export default function App() {
 
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {filteredItems.map(item => (
-              <ItemCard key={item.id} item={item} onClick={() => { setSelectedItem(item); setModalOpen(true); }} />
+              <ItemCard key={item.id} item={item} onClick={() => openItem(item)} />
             ))}
           </div>
         </main>
