@@ -38,11 +38,18 @@ export default function App() {
   useEffect(() => {
     loadData();
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Inicializace dark modu na dokumentu při startu
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+
+    supabase.auth.getSession().then(({ data: { session } }: any) => {
       setUser(session?.user ?? null);
     });
 
-    const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
       setUser(session?.user ?? null);
     });
 
@@ -52,6 +59,16 @@ export default function App() {
       reviewSub.unsubscribe();
     };
   }, []);
+
+  const handleDarkModeToggle = () => {
+    const nextMode = !darkMode;
+    setDarkMode(nextMode);
+    if (nextMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
 
   const genres = useMemo(() => {
     const filtered = category === 'all' ? items : items.filter(i => i.cat === category);
@@ -124,7 +141,7 @@ export default function App() {
             </div>
 
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={() => { setDarkMode(!darkMode); document.documentElement.classList.toggle('light'); }}>
+              <Button variant="ghost" size="icon" onClick={handleDarkModeToggle}>
                 {darkMode ? <Sun className="h-5 w-5 text-yellow-400" /> : <Moon className="h-5 w-5 text-violet-600" />}
               </Button>
               {user ? (
@@ -133,7 +150,7 @@ export default function App() {
                     <LogOut className="h-4 w-4 mr-2" /> Odhlásit
                   </Button>
                   <div className="h-8 w-8 rounded-full bg-violet-600 flex items-center justify-center text-white text-xs font-bold">
-                    {user.email?.[0].toUpperCase()}
+                    {user.email ? user.email[0].toUpperCase() : 'U'}
                   </div>
                 </div>
               ) : (
