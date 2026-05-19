@@ -18,6 +18,9 @@ import { getItems, subscribeToAllReviews, supabase } from '@/lib/supabase';
 import type { Item, Category, SortOption } from '@/types';
 import './App.css';
 
+// Pevně dané žánry — nezávisí na datech z DB
+const GENRES = ['Akční', 'Drama', 'Fantasy', 'Horor', 'Sci-Fi'];
+
 export default function App() {
   const [items, setItems] = useState<Item[]>([]);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
@@ -38,7 +41,6 @@ export default function App() {
   useEffect(() => {
     loadData();
 
-    // Inicializace dark modu na dokumentu při startu
     if (darkMode) {
       document.documentElement.classList.add('dark');
     } else {
@@ -69,11 +71,6 @@ export default function App() {
       document.documentElement.classList.remove('dark');
     }
   };
-
-  const genres = useMemo(() => {
-    const filtered = category === 'all' ? items : items.filter(i => i.cat === category);
-    return [...new Set(filtered.map(i => i.genre))].sort();
-  }, [items, category]);
 
   const top5All = useMemo(() => {
     return [...items]
@@ -236,7 +233,7 @@ export default function App() {
               >
                 Všechny žánry
               </Badge>
-              {genres.map(g => (
+              {GENRES.map(g => (
                 <Badge
                   key={g}
                   className="cursor-pointer px-4 py-2 rounded-full text-sm font-bold"
