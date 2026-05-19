@@ -54,7 +54,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
 
   useEffect(() => {
     if (currentUser && item) {
-      checkIfAlreadyReviewed(currentUser.id);
+      checkIfAlreadyReviewed(currentUser.email || ''); // ✅ opraveno: bylo currentUser.id
     } else {
       setHasReviewed(false);
     }
@@ -67,16 +67,17 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
 
   const loadReviews = async () => {
     if (!item) return;
-    const data = await getReviewsByItemId(String(item.id));
+    const data = await getReviewsByItemId(Number(item.id)); // ✅ opraveno: bylo String(item.id)
     setReviews(data);
   };
 
-  const checkIfAlreadyReviewed = async (userId: string) => {
+  const checkIfAlreadyReviewed = async (userEmail: string) => {
+    const userName = userEmail.split('@')[0];
     const { data } = await supabase
       .from('reviews')
       .select('id')
-      .eq('user_id', userId)
-      .eq('item_id', String(item!.id))
+      .eq('user_name', userName)           // ✅ opraveno: bylo .eq('user_id', userId)
+      .eq('item_id', Number(item!.id))     // ✅ opraveno: bylo String(item.id)
       .maybeSingle();
 
     setHasReviewed(!!data);
@@ -91,22 +92,22 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
     setIsSubmitting(true);
     const authorName = currentUser.email?.split('@')[0] || 'Uživatel';
 
-    const { data: review, alreadyReviewed } = await addReview(
-      String(item.id), authorName, newRating, newText.trim()
-    );
-
-    if (review) {
+    // ✅ opraveno: bylo const { data: review, alreadyReviewed } = await addReview(String(...))
+    try {
+      await addReview(Number(item.id), authorName, newRating, newText.trim());
       toast.success('Uloženo!');
       setNewRating(0);
       setNewText('');
       setHasReviewed(true);
       await loadReviews();
       onReviewAdded();
-    } else if (alreadyReviewed) {
-      toast.error('Recenzi jsi již přidal!');
-      setHasReviewed(true);
-    } else {
-      toast.error('Něco se pokazilo, zkus to znovu.');
+    } catch (err: any) {
+      if (err?.code === '23505') {
+        toast.error('Recenzi jsi již přidal!');
+        setHasReviewed(true);
+      } else {
+        toast.error('Něco se pokazilo, zkus to znovu.');
+      }
     }
 
     setIsSubmitting(false);
@@ -234,11 +235,11 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex items-center gap-3">
                         <div className="h-8 w-8 rounded-full bg-violet-600 flex items-center justify-center font-bold text-xs uppercase text-white">
-                          {r.author_name?.[0] || 'U'}
+                          {r.user_name?.[0] || 'U'} {/* ✅ opraveno: bylo r.author_name */}
                         </div>
                         <div>
                           <div className="text-[10px] font-black uppercase tracking-tight text-slate-200">
-                            {r.author_name}
+                            {r.user_name} {/* ✅ opraveno: bylo r.author_name */}
                           </div>
                           <div className="text-[8px] text-slate-600 uppercase font-bold tracking-widest">
                             {new Date(r.created_at).toLocaleDateString()}
@@ -260,7 +261,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
                       </div>
                     </div>
                     <p className="text-sm text-slate-400 italic break-all whitespace-pre-wrap leading-relaxed">
-                      "{r.comment}"
+                      "{r.text}" {/* ✅ opraveno: bylo r.comment */}
                     </p>
                   </div>
                 ))
