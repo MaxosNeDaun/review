@@ -1,145 +1,85 @@
-import { createClient } from '@supabase/supabase-js';
-import { type Item, type Review } from '../types'; 
+import { createClient } from '@supabase/supabase-browser';
+import type { Item } from '@/types';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Chybí konfigurace pro Supabase v .env souboru!');
+}
 
-// --- ITEMS FUNKCE ---
+export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');
 
-export async function getItems(): Promise<Item[]> {
-  const { data: items, error: itemsError } = await supabase
-    .from('items')
-    .select('*')
-    .order('created_at', { ascending: false });
+/**
+ * Načte všechny položky z databáze včetně jejich recenzí
+ * a spočítá průměrné hodnocení a počet recenzí pro frontend.
+ */
+export const getItems = async (): Promise<Item[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('items')
+      .select(`
+        *,
+        reviews (
+          rating
+        )
+      `)
+      .order('id', { ascending: true });
 
-  if (itemsError) {
-    console.error('Chyba při načítání items:', itemsError.message);
+    if (error) {
+      console.error('Chyba při stahování dat ze Supabase:', error.message);
+      return [];
+    }
+
+    if (!data) return [];
+
+    // Transformace dat: spočítáme průměrné hodnocení a počet recenzí na frontendu
+    return data.map((item: any) => {
+      const itemReviews = item.reviews || [];
+      const review_count = itemReviews.length;
+      
+      // Spočítáme průměr (pokud nejsou recenze, vrátíme 0)
+      const totalRating = itemReviews.reduce((sum: number, r: any) => sum + r.rating, 0);
+      const avg_rating = review_count > 0 ? Number((totalRating / review_count).toFixed(1)) : 0;
+
+      // Vrátíme vyčištěný objekt odpovídající typu Item
+      return {
+        id: item.id,
+        cat: item.cat,
+        title: item.title,
+        emoji: item.emoji,
+        genre: item.genre,
+        color: item.color,
+        description: item.description,
+        image_url: item.image_url,
+        created_at: item.created_at,
+        review_count,
+        avg_rating
+      };
+    });
+  } catch (err) {
+    console.error('Neočekávaná chyba ve funkci getItems:', err);
     return [];
   }
+};
 
-  const { data: reviews } = await supabase.from('reviews').select('item_id, rating');
-
-  return (items as any[]).map((item) => {
-    const itemReviews = (reviews || []).filter((r) => r.item_id === item.id);
-    const avg = itemReviews.length > 0
-      ? itemReviews.reduce((sum, r) => sum + r.rating, 0) / itemReviews.length
-      : 0;
-
-    return {
-      ...item,
-      emoji: item.emoji || '⭐', 
-      avg_rating: Number(avg.toFixed(1)),
-      review_count: itemReviews.length,
-    };
-  });
-}
-
-export async function deleteItem(itemId: string): Promise<boolean> {
-  const { error } = await supabase.from('items').delete().eq('id', itemId);
-  return !error;
-}
-
-// --- RECENZE FUNKCE ---
-
-export async function addReview(
-  itemId: string, 
-  author: string, 
-  rating: number, 
-  comment: string
-): Promise<{ data: Review | null; alreadyReviewed: boolean }> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { data: null, alreadyReviewed: false };
-
-  const { data, error } = await supabase
-    .from('reviews')
-    .insert([{ 
-      item_id: itemId, 
-      author_name: author, 
-      rating: rating, 
-      comment: comment,
-      user_id: user.id,
-    }])
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Chyba při přidávání recenze:', error.message, error.code);
-    const alreadyReviewed = error.code === '23505';
-    return { data: null, alreadyReviewed };
-  }
-
-  return { data: data as Review, alreadyReviewed: false };
-}
-
-export async function getReviewsByItemId(itemId: string): Promise<Review[]> {
-  const { data, error } = await supabase
-    .from('reviews')
-    .select('*')
-    .eq('item_id', itemId)
-    .order('created_at', { ascending: false });
-
-  return error ? [] : (data as Review[]);
-}
-
-export async function deleteReview(reviewId: string): Promise<boolean> {
-  const { error } = await supabase.from('reviews').delete().eq('id', reviewId);
-  return !error;
-}
-
-export function subscribeToAllReviews(callback: () => void) {
+/**
+ * Přihlášení k real-time odběru změn v tabulce recenzí.
+ * Při jakékoliv změně (INSERT, UPDATE, DELETE) zavolá callback pro znovunačtení dat.
+ */
+export const subscribeToAllReviews = (onUpdate: () => void) => {
   return supabase
     .channel('public:reviews')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'reviews' }, () => {
-      callback();
-    })
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'reviews'
+      },
+      () => {
+        onUpdate();
+      }
+    )
     .subscribe();
-}
-
-// --- AUTH & ADMIN ROLE ---
-
-export async function getUserRole(userId: string): Promise<'admin' | 'user'> {
-  const { data } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', userId)
-    .single();
-  return data?.role || 'user';
-}
-
-// --- ADMIN AKCE ---
-
-export async function approveItem(itemId: string) {
-  const { error } = await supabase
-    .from('items')
-    .update({ is_approved: true })
-    .eq('id', itemId);
-  return !error;
-}
-
-export async function getPendingItems() {
-  const { data } = await supabase
-    .from('items')
-    .select('*')
-    .eq('is_approved', false);
-  return data || [];
-}
-
-export async function makeUserAdmin(email: string) {
-  const { error } = await supabase
-    .from('profiles')
-    .update({ role: 'admin' })
-    .eq('email', email);
-  return !error;
-}
-
-export async function suggestItem(item: Partial<Item>) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return false;
-
-  const { error } = await supabase.from('items').insert([
-    { ...item, is_approved: false, created_by: user.id }
-  ]);
-  return !error;
-}
+};
