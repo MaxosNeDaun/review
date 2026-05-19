@@ -17,10 +17,13 @@ export interface Item {
 export interface Review {
   id: string;
   item_id: string;
-  author_name: string; 
+  user_name: string;       // ✅ opraveno z author_name
+  author_name?: string;
   rating: number;
-  comment: string;
+  text: string;            // ✅ opraveno z comment
+  comment?: string;
   created_at: string;
+  user_id?: string;
 }
 
 export interface ReviewWithItem extends Review {
