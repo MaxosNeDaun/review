@@ -11,9 +11,8 @@ export function Top5Card({ item, rank, onClick }: Top5CardProps) {
   return (
     <div
       onClick={onClick}
-      className="group relative min-w-[180px] max-w-[180px] cursor-pointer snap-start overflow-hidden rounded-2xl border border-slate-800 transition-all duration-300 hover:-translate-y-1 hover:border-violet-500/50 hover:shadow-xl hover:shadow-violet-500/10"
+      className="group relative min-w-[170px] max-w-[170px] cursor-pointer snap-start overflow-hidden rounded-2xl border border-border transition-all duration-300 hover:-translate-y-1 hover:border-violet-500/50 hover:shadow-lg"
     >
-      {/* BACKGROUND FOTO */}
       <div className="relative h-48 w-full">
         {item.image_url ? (
           <img
@@ -29,17 +28,18 @@ export function Top5Card({ item, rank, onClick }: Top5CardProps) {
             {item.emoji}
           </div>
         )}
-        {/* Gradient přes foto pro čitelnost textu */}
+
+        {/* Gradient for text */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
 
         {/* Rank badge */}
-        <div className="absolute -left-0 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-r-full bg-gradient-to-br from-violet-600 to-fuchsia-500 text-sm font-bold text-white shadow-lg">
+        <div className="absolute left-0 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-r-full bg-violet-600 text-xs font-bold text-white">
           {rank}
         </div>
 
-        {/* Název a hodnocení přes foto */}
+        {/* Title + rating */}
         <div className="absolute bottom-0 left-0 right-0 p-3">
-          <h4 className="mb-1 line-clamp-1 text-sm font-black uppercase tracking-tight text-white drop-shadow">
+          <h4 className="mb-1 line-clamp-1 text-sm font-bold uppercase tracking-tight text-white">
             {item.title}
           </h4>
           <div className="flex items-center gap-2">
