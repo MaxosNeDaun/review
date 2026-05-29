@@ -18,7 +18,6 @@ import { getItems, subscribeToAllReviews, supabase } from '@/lib/supabase';
 import type { Item, Category, SortOption } from '@/types';
 import './App.css';
 
-// Pevně dané žánry — nezávisí na datech z DB
 const GENRES = ['Akční', 'Drama', 'Fantasy', 'Horor', 'Sci-Fi'];
 
 export default function App() {
@@ -41,11 +40,8 @@ export default function App() {
   useEffect(() => {
     loadData();
 
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    // Apply dark mode on mount
+    document.documentElement.classList.add('dark');
 
     supabase.auth.getSession().then(({ data: { session } }: any) => {
       setUser(session?.user ?? null);
@@ -119,11 +115,12 @@ export default function App() {
     <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
       <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
 
+        {/* NAV */}
         <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl px-4 py-4">
           <div className="mx-auto flex max-w-7xl items-center justify-between">
-            <div className="flex items-center gap-2 font-black text-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 bg-clip-text text-transparent uppercase tracking-tighter">
+            <span className="font-black text-xl uppercase tracking-tighter text-foreground">
               ReviewHub
-            </div>
+            </span>
 
             <div className="hidden lg:flex items-center gap-1 rounded-full bg-muted p-1">
               {['all', 'film', 'game', 'book'].map((id) => (
@@ -139,7 +136,7 @@ export default function App() {
 
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="icon" onClick={handleDarkModeToggle}>
-                {darkMode ? <Sun className="h-5 w-5 text-yellow-400" /> : <Moon className="h-5 w-5 text-violet-600" />}
+                {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </Button>
               {user ? (
                 <div className="flex items-center gap-3">
@@ -151,7 +148,7 @@ export default function App() {
                   </div>
                 </div>
               ) : (
-                <Button onClick={() => setAuthModalOpen(true)} className="bg-violet-600 hover:bg-violet-500 rounded-full px-6 font-bold shadow-lg shadow-violet-500/20">
+                <Button onClick={() => setAuthModalOpen(true)} className="bg-violet-600 hover:bg-violet-500 rounded-full px-6 font-bold">
                   <LogIn className="h-4 w-4 mr-2" /> Přihlásit
                 </Button>
               )}
@@ -159,20 +156,23 @@ export default function App() {
           </div>
         </nav>
 
-        <header className="px-4 py-24 text-center">
-          <h1 className="text-6xl font-black mb-4 tracking-tight md:text-8xl">Review<span className="text-violet-600">Hub</span></h1>
+        {/* HEADER */}
+        <header className="px-4 py-20 text-center">
+          <h1 className="text-6xl font-black mb-4 tracking-tight md:text-8xl">
+            Review<span className="text-violet-600">Hub</span>
+          </h1>
           <p className="mx-auto max-w-2xl text-muted-foreground text-xl font-medium">
             Komunitní hodnocení
           </p>
         </header>
 
-        {/* TOP 5 SEKCE */}
+        {/* TOP 5 */}
         <div className="mx-auto max-w-7xl px-4 mb-20">
 
           {category === 'all' && top5All.length > 0 && (
             <section>
               <h2 className="text-2xl font-black mb-8 flex items-center gap-3">
-                <Trophy className="text-amber-500 h-7 w-7" /> TOP 5
+                <Trophy className="text-amber-500 h-6 w-6" /> TOP 5
               </h2>
               <div className="flex gap-6 overflow-x-auto pb-6 scrollbar-hide">
                 {top5All.map((item, i) => (
@@ -185,7 +185,7 @@ export default function App() {
           {category === 'film' && top5Films.length > 0 && (
             <section>
               <h2 className="text-2xl font-black mb-8 flex items-center gap-3">
-                <Trophy className="text-amber-500 h-7 w-7" /> 🎬 TOP 5 Filmy
+                <Trophy className="text-amber-500 h-6 w-6" /> TOP 5 Filmy
               </h2>
               <div className="flex gap-6 overflow-x-auto pb-6 scrollbar-hide">
                 {top5Films.map((item, i) => (
@@ -198,7 +198,7 @@ export default function App() {
           {category === 'game' && top5Games.length > 0 && (
             <section>
               <h2 className="text-2xl font-black mb-8 flex items-center gap-3">
-                <Trophy className="text-amber-500 h-7 w-7" /> 🎮 TOP 5 Hry
+                <Trophy className="text-amber-500 h-6 w-6" /> TOP 5 Hry
               </h2>
               <div className="flex gap-6 overflow-x-auto pb-6 scrollbar-hide">
                 {top5Games.map((item, i) => (
@@ -211,7 +211,7 @@ export default function App() {
           {category === 'book' && top5Books.length > 0 && (
             <section>
               <h2 className="text-2xl font-black mb-8 flex items-center gap-3">
-                <Trophy className="text-amber-500 h-7 w-7" /> 📖 TOP 5 Knihy
+                <Trophy className="text-amber-500 h-6 w-6" /> TOP 5 Knihy
               </h2>
               <div className="flex gap-6 overflow-x-auto pb-6 scrollbar-hide">
                 {top5Books.map((item, i) => (
@@ -223,6 +223,7 @@ export default function App() {
 
         </div>
 
+        {/* MAIN GRID */}
         <main className="mx-auto max-w-7xl px-4 pb-20">
           <div className="flex flex-col md:flex-row gap-6 mb-12 justify-between items-center border-t border-border/50 pt-12">
             <div className="flex gap-2 flex-wrap">
@@ -250,9 +251,9 @@ export default function App() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="rating">⭐ Hodnocení</SelectItem>
-                <SelectItem value="name">🔤 Název</SelectItem>
-                <SelectItem value="reviews">💬 Počet recenzí</SelectItem>
+                <SelectItem value="rating">Hodnocení</SelectItem>
+                <SelectItem value="name">Název</SelectItem>
+                <SelectItem value="reviews">Počet recenzí</SelectItem>
               </SelectContent>
             </Select>
           </div>
