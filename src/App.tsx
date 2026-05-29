@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Moon, Sun, Trophy, LogIn, LogOut } from 'lucide-react';
+import { Moon, Sun, LogIn, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -37,11 +37,17 @@ export default function App() {
     setItems(data);
   };
 
+  // Sync dark class with state (runs on mount + every toggle)
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
+
   useEffect(() => {
     loadData();
-
-    // Apply dark mode on mount
-    document.documentElement.classList.add('dark');
 
     supabase.auth.getSession().then(({ data: { session } }: any) => {
       setUser(session?.user ?? null);
@@ -59,13 +65,7 @@ export default function App() {
   }, []);
 
   const handleDarkModeToggle = () => {
-    const nextMode = !darkMode;
-    setDarkMode(nextMode);
-    if (nextMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    setDarkMode(prev => !prev);
   };
 
   const top5All = useMemo(() => {
@@ -171,8 +171,8 @@ export default function App() {
 
           {category === 'all' && top5All.length > 0 && (
             <section>
-              <h2 className="text-2xl font-black mb-8 flex items-center gap-3">
-                <Trophy className="text-amber-500 h-6 w-6" /> TOP 5
+              <h2 className="text-2xl font-black mb-8">
+                TOP 5
               </h2>
               <div className="flex gap-6 overflow-x-auto pb-6 scrollbar-hide">
                 {top5All.map((item, i) => (
@@ -184,8 +184,8 @@ export default function App() {
 
           {category === 'film' && top5Films.length > 0 && (
             <section>
-              <h2 className="text-2xl font-black mb-8 flex items-center gap-3">
-                <Trophy className="text-amber-500 h-6 w-6" /> TOP 5 Filmy
+              <h2 className="text-2xl font-black mb-8">
+                TOP 5 Filmy
               </h2>
               <div className="flex gap-6 overflow-x-auto pb-6 scrollbar-hide">
                 {top5Films.map((item, i) => (
@@ -197,8 +197,8 @@ export default function App() {
 
           {category === 'game' && top5Games.length > 0 && (
             <section>
-              <h2 className="text-2xl font-black mb-8 flex items-center gap-3">
-                <Trophy className="text-amber-500 h-6 w-6" /> TOP 5 Hry
+              <h2 className="text-2xl font-black mb-8">
+                TOP 5 Hry
               </h2>
               <div className="flex gap-6 overflow-x-auto pb-6 scrollbar-hide">
                 {top5Games.map((item, i) => (
@@ -210,8 +210,8 @@ export default function App() {
 
           {category === 'book' && top5Books.length > 0 && (
             <section>
-              <h2 className="text-2xl font-black mb-8 flex items-center gap-3">
-                <Trophy className="text-amber-500 h-6 w-6" /> TOP 5 Knihy
+              <h2 className="text-2xl font-black mb-8">
+                TOP 5 Knihy
               </h2>
               <div className="flex gap-6 overflow-x-auto pb-6 scrollbar-hide">
                 {top5Books.map((item, i) => (
