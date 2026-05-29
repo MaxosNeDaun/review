@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Moon, Sun, LogIn, LogOut } from 'lucide-react';
+import { LogIn, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -25,7 +25,6 @@ export default function App() {
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(true);
   const [user, setUser] = useState<any>(null);
 
   const [category, setCategory] = useState<Category>('all');
@@ -37,14 +36,10 @@ export default function App() {
     setItems(data);
   };
 
-  // Sync dark class with state (runs on mount + every toggle)
+  // Always dark mode
   useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [darkMode]);
+    document.documentElement.classList.add('dark');
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -64,9 +59,7 @@ export default function App() {
     };
   }, []);
 
-  const handleDarkModeToggle = () => {
-    setDarkMode(prev => !prev);
-  };
+
 
   const top5All = useMemo(() => {
     return [...items]
@@ -112,7 +105,7 @@ export default function App() {
   };
 
   return (
-    <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
+    <div className="min-h-screen dark">
       <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
 
         {/* NAV */}
@@ -135,9 +128,6 @@ export default function App() {
             </div>
 
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={handleDarkModeToggle}>
-                {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-              </Button>
               {user ? (
                 <div className="flex items-center gap-3">
                   <Button variant="ghost" size="sm" onClick={() => supabase.auth.signOut()} className="text-muted-foreground hover:text-red-500">
