@@ -28,12 +28,6 @@ const catLabels: Record<string, string> = {
   book: 'Kniha',
 };
 
-const catEmojis: Record<string, string> = {
-  film: '🎬',
-  game: '🎮',
-  book: '📚',
-};
-
 export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModalProps) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [newRating, setNewRating] = useState(0);
@@ -54,7 +48,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
 
   useEffect(() => {
     if (currentUser && item) {
-      checkIfAlreadyReviewed(currentUser.email || ''); // ✅ opraveno: bylo currentUser.id
+      checkIfAlreadyReviewed(currentUser.email || '');
     } else {
       setHasReviewed(false);
     }
@@ -67,7 +61,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
 
   const loadReviews = async () => {
     if (!item) return;
-    const data = await getReviewsByItemId(Number(item.id)); // ✅ opraveno: bylo String(item.id)
+    const data = await getReviewsByItemId(Number(item.id));
     setReviews(data);
   };
 
@@ -76,8 +70,8 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
     const { data } = await supabase
       .from('reviews')
       .select('id')
-      .eq('user_name', userName)           // ✅ opraveno: bylo .eq('user_id', userId)
-      .eq('item_id', Number(item!.id))     // ✅ opraveno: bylo String(item.id)
+      .eq('user_name', userName)
+      .eq('item_id', Number(item!.id))
       .maybeSingle();
 
     setHasReviewed(!!data);
@@ -92,7 +86,6 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
     setIsSubmitting(true);
     const authorName = currentUser.email?.split('@')[0] || 'Uživatel';
 
-    // ✅ opraveno: bylo const { data: review, alreadyReviewed } = await addReview(String(...))
     try {
       await addReview(Number(item.id), authorName, newRating, newText.trim());
       toast.success('Uloženo!');
@@ -134,33 +127,33 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-hidden border-slate-800 bg-slate-950 p-0 text-white shadow-2xl">
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-hidden border-border bg-card p-0 shadow-2xl">
 
-        {/* HEADER */}
-        <div className="relative h-64 w-full overflow-hidden bg-slate-900">
+        {/* HEADER IMAGE */}
+        <div className="relative h-64 w-full overflow-hidden bg-muted">
           {item.image_url ? (
             <img
               src={item.image_url}
               alt={item.title}
-              className="h-full w-full object-cover opacity-70"
+              className="h-full w-full object-cover opacity-80"
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-7xl" style={{ background: item.color }}>
-              {item.emoji || catEmojis[item.cat]}
+              {item.emoji}
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 to-transparent" />
           <button
             onClick={() => onOpenChange(false)}
-            className="absolute right-4 top-4 z-50 h-8 w-8 rounded-full bg-black/50 flex items-center justify-center hover:bg-red-600 transition-colors"
+            className="absolute right-4 top-4 z-50 h-8 w-8 rounded-full bg-black/50 flex items-center justify-center hover:bg-red-600 transition-colors text-white"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </button>
           <div className="absolute bottom-6 left-6">
             <Badge className="bg-violet-600 mb-2 uppercase text-[10px] tracking-widest border-none text-white">
               {catLabels[item.cat]}
             </Badge>
-            <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter">
+            <DialogTitle className="text-3xl font-bold uppercase tracking-tight text-white">
               {item.title}
             </DialogTitle>
           </div>
@@ -169,34 +162,34 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
         <ScrollArea className="max-h-[calc(90vh-16rem)]">
           <div className="p-8">
 
-            {/* HODNOCENÍ */}
-            <div className="mb-8 flex items-center gap-6 rounded-2xl bg-slate-900/50 p-6 border border-slate-800 shadow-inner">
+            {/* RATING SUMMARY */}
+            <div className="mb-8 flex items-center gap-6 rounded-xl bg-muted/50 p-5 border border-border">
               <div className="text-5xl font-black text-violet-500">
                 {Number(item.avg_rating || 0).toFixed(1)}
               </div>
               <div>
                 <StarRating rating={Number(item.avg_rating || 0)} size="lg" />
-                <div className="text-[10px] font-bold text-slate-500 uppercase mt-1 tracking-widest">
-                  {item.review_count || 0} RECENZÍ
+                <div className="text-[10px] font-bold text-muted-foreground uppercase mt-1 tracking-widest">
+                  {item.review_count || 0} recenzí
                 </div>
               </div>
             </div>
 
-            {/* FORMULÁŘ */}
+            {/* FORM */}
             {!currentUser ? (
-              <div className="mb-10 text-center py-6 border border-dashed border-slate-800 rounded-2xl bg-slate-900/20">
-                <p className="text-xs text-slate-500 uppercase font-bold tracking-widest flex items-center justify-center gap-2">
-                  <Lock className="h-3 w-3" /> PŘIHLAŠ SE PRO HODNOCENÍ
+              <div className="mb-10 text-center py-6 border border-dashed border-border rounded-xl bg-muted/20">
+                <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest flex items-center justify-center gap-2">
+                  <Lock className="h-3 w-3" /> Přihlaš se pro hodnocení
                 </p>
               </div>
             ) : hasReviewed ? (
-              <div className="mb-10 text-center py-6 border border-dashed border-violet-500/30 rounded-2xl bg-violet-600/5">
-                <p className="text-xs text-violet-400 uppercase font-bold tracking-widest">
-                  ✓ Recenzi jsi již přidal
+              <div className="mb-10 text-center py-6 border border-dashed border-violet-500/30 rounded-xl bg-violet-600/5">
+                <p className="text-xs text-violet-500 uppercase font-bold tracking-widest">
+                  Recenzi jsi již přidal
                 </p>
               </div>
             ) : (
-              <div className="mb-10 space-y-4 rounded-2xl bg-violet-600/5 p-6 border border-violet-500/20 shadow-sm">
+              <div className="mb-10 space-y-4 rounded-xl bg-muted/30 p-6 border border-border">
                 <StarRating rating={newRating} size="lg" interactive onRatingChange={setNewRating} />
                 <div className="relative">
                   <Textarea
@@ -204,44 +197,44 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
                     value={newText}
                     onChange={(e) => setNewText(e.target.value)}
                     maxLength={MAX_CHARS}
-                    className="bg-slate-950 border-slate-800 rounded-xl min-h-[80px] text-sm break-all focus:ring-violet-500"
+                    className="rounded-xl min-h-[80px] text-sm break-all"
                   />
-                  <div className="absolute bottom-2 right-3 text-[9px] text-slate-600">
+                  <div className="absolute bottom-2 right-3 text-[9px] text-muted-foreground">
                     {newText.length}/{MAX_CHARS}
                   </div>
                 </div>
                 <Button
                   onClick={handleSubmit}
                   disabled={isSubmitting}
-                  className="w-full bg-violet-600 hover:bg-violet-500 font-bold uppercase tracking-widest text-white transition-all active:scale-95"
+                  className="w-full bg-violet-600 hover:bg-violet-500 font-bold uppercase tracking-widest transition-all active:scale-95"
                 >
-                  {isSubmitting ? 'UKLÁDÁM...' : 'ODESLAT HODNOCENÍ'}
+                  {isSubmitting ? 'Ukládám...' : 'Odeslat hodnocení'}
                 </Button>
               </div>
             )}
 
-            <Separator className="mb-8 bg-slate-800" />
+            <Separator className="mb-8" />
 
-            {/* RECENZE KOMUNITY */}
+            {/* REVIEWS */}
             <div className="space-y-4">
-              <h3 className="font-black italic uppercase text-lg tracking-tight">Recenze</h3>
+              <h3 className="font-bold uppercase text-lg tracking-tight">Recenze</h3>
               {reviews.length === 0 ? (
-                <p className="text-slate-600 text-xs uppercase font-bold text-center py-6 border border-slate-900 rounded-2xl italic">
+                <p className="text-muted-foreground text-xs uppercase font-bold text-center py-6 border border-border rounded-xl">
                   Zatím žádné recenze
                 </p>
               ) : (
                 reviews.map((r) => (
-                  <div key={r.id} className="rounded-2xl border border-slate-800 bg-slate-900/30 p-5 transition-colors hover:bg-slate-900/50">
+                  <div key={r.id} className="rounded-xl border border-border bg-muted/20 p-5 transition-colors hover:bg-muted/40">
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex items-center gap-3">
                         <div className="h-8 w-8 rounded-full bg-violet-600 flex items-center justify-center font-bold text-xs uppercase text-white">
-                          {r.user_name?.[0] || 'U'} {/* ✅ opraveno: bylo r.author_name */}
+                          {r.user_name?.[0] || 'U'}
                         </div>
                         <div>
-                          <div className="text-[10px] font-black uppercase tracking-tight text-slate-200">
-                            {r.user_name} {/* ✅ opraveno: bylo r.author_name */}
+                          <div className="text-[10px] font-bold uppercase tracking-tight">
+                            {r.user_name}
                           </div>
-                          <div className="text-[8px] text-slate-600 uppercase font-bold tracking-widest">
+                          <div className="text-[8px] text-muted-foreground uppercase font-bold tracking-widest">
                             {new Date(r.created_at).toLocaleDateString()}
                           </div>
                         </div>
@@ -252,7 +245,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
                         {currentUser?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase() && (
                           <button
                             onClick={() => handleDelete(r.id)}
-                            className="p-1.5 text-slate-600 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                            className="p-1.5 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
                             title="Smazat recenzi"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -260,8 +253,8 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
                         )}
                       </div>
                     </div>
-                    <p className="text-sm text-slate-400 italic break-all whitespace-pre-wrap leading-relaxed">
-                      "{r.text}" {/* ✅ opraveno: bylo r.comment */}
+                    <p className="text-sm text-muted-foreground italic break-all whitespace-pre-wrap leading-relaxed">
+                      "{r.text}"
                     </p>
                   </div>
                 ))
