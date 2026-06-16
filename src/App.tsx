@@ -112,7 +112,7 @@ export default function App() {
         <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl px-4 py-4">
           <div className="mx-auto flex max-w-7xl items-center justify-between">
             <span className="font-black text-xl uppercase tracking-tighter text-foreground">
-              Review
+              Recenze
             </span>
 
             <div className="hidden lg:flex items-center gap-1 rounded-full bg-muted p-1">
