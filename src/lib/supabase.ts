@@ -36,7 +36,6 @@ export const getItems = async (): Promise<Item[]> => {
     return data.map((item: any) => {
       const itemReviews = item.reviews || [];
       const review_count = itemReviews.length;
-      
       const totalRating = itemReviews.reduce((sum: number, r: any) => sum + r.rating, 0);
       const avg_rating = review_count > 0 ? Number((totalRating / review_count).toFixed(1)) : 0;
 
@@ -63,7 +62,7 @@ export const getItems = async (): Promise<Item[]> => {
 /**
  * Načte podrobné recenze pro konkrétní položku (používá ItemModal).
  */
-export const getReviewsByItemId = async (itemId: number) => {
+export const getReviewsByItemId = async (itemId: string) => {
   const { data, error } = await supabase
     .from('reviews')
     .select('*')
@@ -74,24 +73,36 @@ export const getReviewsByItemId = async (itemId: number) => {
     console.error('Chyba při načítání recenzí:', error.message);
     return [];
   }
+
   return data || [];
 };
 
 /**
  * Přidá novou recenzi do databáze (používá ItemModal).
  */
-export const addReview = async (itemId: number, userName: string, rating: number, text: string) => {
+export const addReview = async (itemId: string, userName: string, rating: number, text: string) => {
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (!session) {
+    throw new Error('Nejsi přihlášen');
+  }
+
   const { data, error } = await supabase
     .from('reviews')
-    .insert([
-      { item_id: itemId, user_name: userName, rating, text }
-    ])
+    .insert([{
+      item_id: itemId,
+      author_name: userName,
+      rating: rating,
+      comment: text,
+      user_id: session.user.id
+    }])
     .select();
 
   if (error) {
     console.error('Chyba při přidávání recenze:', error.message);
     throw error;
   }
+
   return data;
 };
 
