@@ -48,7 +48,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
 
   useEffect(() => {
     if (currentUser && item) {
-      checkIfAlreadyReviewed(currentUser.email || '');
+      checkIfAlreadyReviewed();
     } else {
       setHasReviewed(false);
     }
@@ -61,17 +61,17 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
 
   const loadReviews = async () => {
     if (!item) return;
-    const data = await getReviewsByItemId(Number(item.id));
+    const data = await getReviewsByItemId(item.id);
     setReviews(data);
   };
 
-  const checkIfAlreadyReviewed = async (userEmail: string) => {
-    const userName = userEmail.split('@')[0];
+  const checkIfAlreadyReviewed = async () => {
+    if (!currentUser || !item) return;
     const { data } = await supabase
       .from('reviews')
       .select('id')
-      .eq('user_name', userName)
-      .eq('item_id', Number(item!.id))
+      .eq('user_id', currentUser.id)
+      .eq('item_id', item.id)
       .maybeSingle();
 
     setHasReviewed(!!data);
@@ -87,7 +87,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
     const authorName = currentUser.email?.split('@')[0] || 'Uživatel';
 
     try {
-      await addReview(Number(item.id), authorName, newRating, newText.trim());
+      await addReview(item.id, authorName, newRating, newText.trim());
       toast.success('Uloženo!');
       setNewRating(0);
       setNewText('');
@@ -228,11 +228,11 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex items-center gap-3">
                         <div className="h-8 w-8 rounded-full bg-violet-600 flex items-center justify-center font-bold text-xs uppercase text-white">
-                          {r.user_name?.[0] || 'U'}
+                          {r.author_name?.[0] || 'U'}
                         </div>
                         <div>
                           <div className="text-[10px] font-bold uppercase tracking-tight">
-                            {r.user_name}
+                            {r.author_name}
                           </div>
                           <div className="text-[8px] text-muted-foreground uppercase font-bold tracking-widest">
                             {new Date(r.created_at).toLocaleDateString()}
@@ -254,7 +254,7 @@ export function ItemModal({ item, open, onOpenChange, onReviewAdded }: ItemModal
                       </div>
                     </div>
                     <p className="text-sm text-muted-foreground italic break-all whitespace-pre-wrap leading-relaxed">
-                      "{r.text}"
+                      "{r.comment}"
                     </p>
                   </div>
                 ))
