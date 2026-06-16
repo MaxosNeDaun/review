@@ -149,7 +149,7 @@ export default function App() {
         {/* HEADER */}
         <header className="px-4 py-20 text-center">
           <h1 className="text-6xl font-black mb-4 tracking-tight md:text-8xl">
-           <span className="text-violet-600">Recenze</span>
+           <span className="text-white">Recenze</span>
           </h1>
           <p className="mx-auto max-w-2xl text-muted-foreground text-xl font-medium">
             Komunitní hodnocení
